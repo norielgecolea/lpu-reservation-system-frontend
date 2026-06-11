@@ -1,0 +1,43 @@
+package org.lpu.dev.codes.runners;
+
+
+
+import org.springframework.boot.CommandLineRunner;
+import org.springframework.stereotype.Component;
+
+@Component
+public class SuperAdminDataLoader implements CommandLineRunner {
+
+    private final UserRepository userRepository;
+    private final PasswordEncoder passwordEncoder;
+
+    public SuperAdminDataLoader(UserRepository userRepository,
+                                PasswordEncoder passwordEncoder) {
+        this.userRepository = userRepository;
+        this.passwordEncoder = passwordEncoder;
+    }
+
+    @Override
+    public void run(String... args) throws Exception {
+
+        String username = "superadmin";
+
+        if (userRepository.findByUsername(username).isEmpty()) {
+
+            User superAdmin = new User();
+            superAdmin.setUsername("superadmin");
+            superAdmin.setFullname("System Super Administrator");
+            superAdmin.setRole("SUPERADMIN");
+            superAdmin.setEmail("superadmin@lpu.edu.ph");
+            superAdmin.setEmployeeId("SUPER001");
+            superAdmin.setPasswordHash(
+                    passwordEncoder.encode("SuperAdmin@123")
+            );
+            superAdmin.setStatus("ACTIVE");
+
+            userRepository.save(superAdmin);
+
+            System.out.println("✓ SUPERADMIN account created");
+        }
+    }
+}

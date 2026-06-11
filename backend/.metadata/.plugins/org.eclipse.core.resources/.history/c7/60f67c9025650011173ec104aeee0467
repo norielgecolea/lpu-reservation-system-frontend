@@ -1,0 +1,5 @@
+package org.lpu.dev.codes.controller;
+
+public class AuthenticationController {
+
+}

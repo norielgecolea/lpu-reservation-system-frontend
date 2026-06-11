@@ -1,0 +1,59 @@
+package org.lpu.dev.codes.services;
+
+
+
+import org.lpu.dev.codes.model.data.Users;
+import org.lpu.dev.codes.model.dto.LoginRequest;
+import org.lpu.dev.codes.model.dto.LoginResponse;
+import org.lpu.dev.codes.repository.UserRepository;
+import org.lpu.dev.codes.security.JWTUtil;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.stereotype.Service;
+
+@Service
+public class AuthenticationService {
+
+    @Autowired
+    private UserRepository userRepository;
+
+    @Autowired
+    private PasswordEncoder passwordEncoder;
+
+    @Autowired
+    private JWTUtil jwtUtil;
+
+    public LoginResponse login(LoginRequest request) {
+
+        Users user =
+            userRepository.findByUsername(
+                request.getUsername()
+            );
+
+        if (user == null) {
+            throw new RuntimeException("Invalid username");
+        }
+
+        if (!passwordEncoder.matches(
+                request.getPassword(),
+                user.getPasswordHash())) {
+
+            throw new RuntimeException("Invalid password");
+        }
+
+        String token =
+            jwtUtil.generateToken(
+                user.getUsername(),
+                user.getRole()
+            );
+
+        LoginResponse response =
+            new LoginResponse();
+
+        response.setToken(token);
+        response.setUsername(user.getUsername());
+        response.setRole(user.getRole());
+
+        return response;
+    }
+}

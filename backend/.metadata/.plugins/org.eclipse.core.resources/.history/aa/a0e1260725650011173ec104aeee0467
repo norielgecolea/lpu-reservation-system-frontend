@@ -1,0 +1,5 @@
+package org.lpu.dev.codes.security;
+
+public class JWTUtil {
+
+}
