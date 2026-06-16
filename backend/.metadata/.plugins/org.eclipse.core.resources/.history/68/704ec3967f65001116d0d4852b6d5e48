@@ -1,5 +1,0 @@
-package org.lpu.dev.codes.model.apiresponse;
-
-public class CreateAccountResponse {
-
-}

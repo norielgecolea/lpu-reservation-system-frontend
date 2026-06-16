@@ -54,7 +54,7 @@ public class UserManagementController {
 		return null;
 
 	}
-
+//asd
 	@DeleteMapping("/admin/deleteacc")
 	public AccountStatementResponse deleteAccount(
 	        @RequestHeader("Authorization") String authHeader,
