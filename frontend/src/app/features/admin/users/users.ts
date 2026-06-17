@@ -34,6 +34,7 @@ export class Users {
   constructor() {
     this.load();
   }
+  
 
   protected load(): void {
     this.loading.set(true);
@@ -126,6 +127,10 @@ protected toggleStatus(u: UserRow): void {
     },
   });
 }
+
+
+
+
 protected readonly showToast = signal(false);
 protected readonly toastMessage = signal('');
 protected readonly toastSuccess = signal(false);
