@@ -3,7 +3,7 @@
 
   <main class="flex min-h-0 flex-1 flex-col gap-5 overflow-auto p-4 sm:p-6">
     <header
-      class="animate-rise flex shrink-0 flex-col gap-4 rounded-3xl bg-[linear-gradient(135deg,#5f1830,#8d2546_58%,#c55339)] p-5 text-white shadow-2xl shadow-primary/20 sm:flex-row sm:items-end sm:justify-between sm:p-7"
+      class="flex shrink-0 flex-col gap-4 rounded-3xl bg-[linear-gradient(135deg,#5f1830,#8d2546_58%,#c55339)] p-5 text-white shadow-2xl shadow-primary/20 sm:flex-row sm:items-end sm:justify-between sm:p-7"
     >
       <div>
         <p class="text-sm font-semibold uppercase tracking-[0.2em] text-white/70">Admin overview</p>
@@ -13,7 +13,7 @@
       </div>
       <button
         type="button"
-        class="animate-shimmer flex w-fit cursor-pointer items-center gap-2 rounded-xl bg-white/15 bg-[linear-gradient(110deg,rgba(255,255,255,0.12),rgba(255,255,255,0.34),rgba(255,255,255,0.12))] px-4 py-2 text-sm font-bold text-white ring-1 ring-white/20 backdrop-blur transition hover:bg-white/20"
+        class="flex w-fit cursor-pointer items-center gap-2 rounded-xl bg-white/15 bg-[linear-gradient(110deg,rgba(255,255,255,0.12),rgba(255,255,255,0.34),rgba(255,255,255,0.12))] px-4 py-2 text-sm font-bold text-white ring-1 ring-white/20 backdrop-blur transition hover:bg-white/20"
       >
         <ui-icon name="calendar_today" class="text-base" />
         <span>2026</span>
@@ -24,7 +24,7 @@
     <section class="grid shrink-0 grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
       @for (s of stats; track s.label) {
         <div
-          class="surface animate-rise rounded-2xl p-4 transition duration-200 hover:-translate-y-1 hover:shadow-2xl"
+          class="surface rounded-2xl p-4 transition duration-200 hover:-translate-y-1 hover:shadow-2xl"
         >
           <div class="flex items-start justify-between">
             <div class="flex flex-col gap-1.5">
@@ -52,7 +52,7 @@
       }
     </section>
 
-    <section class="surface animate-rise flex min-h-[420px] flex-1 flex-col rounded-3xl p-4 sm:p-6">
+    <section class="surface flex min-h-[420px] flex-1 flex-col rounded-3xl p-4 sm:p-6">
       <div class="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h2 class="text-xl font-black text-gray-950">Reservation activity</h2>

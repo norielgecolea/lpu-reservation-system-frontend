@@ -1,67 +1,28 @@
 <div
-  class="relative flex min-h-dvh w-full items-center justify-center overflow-hidden bg-[#f6f7fb] p-4 sm:p-6"
+  class="relative flex min-h-dvh w-full items-center justify-center overflow-hidden bg-gray-500 p-4 sm:p-6"
 >
   <div
-    class="absolute inset-0 scale-105 bg-slate-200 bg-cover bg-center"
+    class="absolute inset-0 bg-cover bg-center opacity-30"
     style="background-image: url('/background.webp')"
     aria-hidden="true"
   ></div>
-  <div
-    class="absolute inset-0 bg-[radial-gradient(circle_at_15%_15%,rgba(141,37,70,0.28),transparent_30%),linear-gradient(120deg,rgba(255,255,255,0.92),rgba(255,255,255,0.68))]"
-    aria-hidden="true"
-  ></div>
-  <div
-    class="animate-float absolute -left-20 top-16 h-56 w-56 rounded-full bg-primary/15 blur-3xl"
-    aria-hidden="true"
-  ></div>
-  <div
-    class="animate-float absolute -right-24 bottom-8 h-72 w-72 rounded-full bg-amber-300/20 blur-3xl [animation-delay:1.2s]"
-    aria-hidden="true"
-  ></div>
 
   <div
-    class="surface animate-rise relative z-10 grid w-full max-w-5xl overflow-hidden rounded-3xl md:grid-cols-[1.05fr_0.95fr]"
+    class="surface relative z-10 grid w-full max-w-5xl overflow-hidden rounded-xl border-0! md:grid-cols-[1.05fr_0.95fr]"
   >
-    <div class="relative hidden min-h-[620px] overflow-hidden bg-slate-200 md:block">
+    <div class="relative hidden min-h-155 overflow-hidden bg-gray-500 md:block">
       <img src="/lpu-building.webp" alt="LPU Laguna campus" class="h-full w-full object-cover" />
-      <div
-        class="absolute inset-0 bg-gradient-to-tr from-primary/75 via-primary/25 to-transparent"
-      ></div>
-      <div class="absolute bottom-0 left-0 right-0 p-8 text-white">
-        <div
-          class="mb-5 inline-flex items-center gap-2 rounded-full bg-white/15 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] backdrop-blur"
-        >
-          <span class="h-2 w-2 rounded-full bg-emerald-300"></span>
-          Campus Reservation Portal
-        </div>
-        <h2 class="max-w-sm text-4xl font-black leading-tight">
-          Reserve spaces, equipment, and services faster.
-        </h2>
-      </div>
     </div>
 
     <div class="relative flex flex-col justify-center gap-8 px-6 py-10 sm:px-10 md:py-14">
-      <img
-        src="/logo.svg"
-        alt=""
-        aria-hidden="true"
-        class="pointer-events-none absolute right-5 top-5 h-28 w-28 object-contain opacity-[0.08] grayscale sm:h-36 sm:w-36"
-      />
-
       <header class="relative flex flex-col gap-3">
         <div class="flex items-center gap-3 md:hidden">
           <img src="/logo.svg" alt="LPU Laguna" class="h-12 w-12 object-contain" />
           <span class="text-sm font-bold uppercase tracking-[0.18em] text-primary">LPU Laguna</span>
         </div>
-        <p class="hidden text-sm font-bold uppercase tracking-[0.22em] text-secondary md:block">
-          Welcome back
-        </p>
         <h1 class="text-3xl font-black leading-tight text-gray-950 sm:text-4xl">
           LPU - Laguna<br />Reservation System
         </h1>
-        <p class="max-w-sm text-sm leading-6 text-gray-500">
-          Sign in to manage reservations, requests, and campus resources.
-        </p>
       </header>
 
       <form
@@ -71,7 +32,6 @@
         novalidate
       >
         <div class="flex flex-col gap-1.5">
-          <label uiLabel for="username">Username</label>
           <input
             uiInput
             id="username"
@@ -83,7 +43,6 @@
         </div>
 
         <div class="flex flex-col gap-1.5">
-          <label uiLabel for="password">Password</label>
           <div class="relative">
             <input
               uiInput
@@ -108,7 +67,7 @@
 
         @if (error()) {
           <p
-            class="animate-rise rounded-lg border border-red-100 bg-red-50 px-3 py-2 text-sm font-medium text-red-600"
+            class="rounded-lg border border-red-100 bg-red-50 px-3 py-2 text-sm font-medium text-red-600"
           >
             {{ error() }}
           </p>
