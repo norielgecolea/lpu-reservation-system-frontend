@@ -10,6 +10,10 @@ interface MonthOption {
   value: number;
 }
 
+type PickerView = 'month' | 'year';
+
+const YEAR_PAGE_SIZE = 12;
+
 const MONTHS: MonthOption[] = [
   { label: 'January', shortLabel: 'Jan', value: 0 },
   { label: 'February', shortLabel: 'Feb', value: 1 },
@@ -46,6 +50,10 @@ function formatYearMonth(year: number, month: number): string {
   return `${year}-${String(month + 1).padStart(2, '0')}`;
 }
 
+function getYearRangeStart(year: number): number {
+  return Math.floor(year / 10) * 10;
+}
+
 /** Month/year picker. Styled like the segmented control, built on spartan/brain button + popover. */
 @Component({
   selector: 'ui-date-selector',
@@ -73,42 +81,73 @@ function formatYearMonth(year: number, month: number): string {
             <button
               brnButton
               type="button"
-              aria-label="Previous year"
+              [attr.aria-label]="pickerView() === 'year' ? 'Previous years' : 'Previous year'"
               class="flex h-8 w-8 cursor-pointer items-center justify-center rounded-lg text-gray-500 hover:bg-secondary/10 hover:text-primary"
-              (click)="shiftYear(-1)"
+              (click)="shiftHeader(-1)"
             >
               <ui-icon name="chevron_left" class="text-lg" />
             </button>
 
-            <div class="text-sm font-extrabold text-primary">{{ pickerYear() }}</div>
+            <button
+              brnButton
+              type="button"
+              [attr.aria-label]="pickerView() === 'year' ? 'Show months' : 'Choose year'"
+              class="flex h-8 cursor-pointer items-center gap-1 rounded-lg px-3 text-sm font-extrabold text-primary hover:bg-secondary/10"
+              (click)="toggleYearPicker()"
+            >
+              <span>{{ headerLabel() }}</span>
+              <ui-icon
+                [name]="pickerView() === 'year' ? 'expand_less' : 'expand_more'"
+                class="text-base"
+              />
+            </button>
 
             <button
               brnButton
               type="button"
-              aria-label="Next year"
+              [attr.aria-label]="pickerView() === 'year' ? 'Next years' : 'Next year'"
               class="flex h-8 w-8 cursor-pointer items-center justify-center rounded-lg text-gray-500 hover:bg-secondary/10 hover:text-primary"
-              (click)="shiftYear(1)"
+              (click)="shiftHeader(1)"
             >
               <ui-icon name="chevron_right" class="text-lg" />
             </button>
           </div>
 
-          <div class="mt-3 grid grid-cols-3 gap-1.5">
-            @for (month of months; track month.value) {
-              <button
-                brnButton
-                type="button"
-                class="h-9 cursor-pointer rounded-lg text-sm font-semibold text-gray-600 transition-colors hover:bg-secondary/10 hover:text-primary"
-                [class.bg-primary]="isSelectedMonth(month.value)"
-                [class.text-white]="isSelectedMonth(month.value)"
-                [class.hover:bg-primary]="isSelectedMonth(month.value)"
-                [class.hover:text-white]="isSelectedMonth(month.value)"
-                (click)="selectMonth(month.value, datePopover)"
-              >
-                {{ month.shortLabel }}
-              </button>
-            }
-          </div>
+          @if (pickerView() === 'year') {
+            <div class="mt-3 grid grid-cols-3 gap-1.5">
+              @for (year of yearOptions(); track year) {
+                <button
+                  brnButton
+                  type="button"
+                  class="h-9 cursor-pointer rounded-lg text-sm font-semibold text-gray-600 transition-colors hover:bg-secondary/10 hover:text-primary"
+                  [class.bg-primary]="isSelectedYear(year)"
+                  [class.text-white]="isSelectedYear(year)"
+                  [class.hover:bg-primary]="isSelectedYear(year)"
+                  [class.hover:text-white]="isSelectedYear(year)"
+                  (click)="selectYear(year)"
+                >
+                  {{ year }}
+                </button>
+              }
+            </div>
+          } @else {
+            <div class="mt-3 grid grid-cols-3 gap-1.5">
+              @for (month of months; track month.value) {
+                <button
+                  brnButton
+                  type="button"
+                  class="h-9 cursor-pointer rounded-lg text-sm font-semibold text-gray-600 transition-colors hover:bg-secondary/10 hover:text-primary"
+                  [class.bg-primary]="isSelectedMonth(month.value)"
+                  [class.text-white]="isSelectedMonth(month.value)"
+                  [class.hover:bg-primary]="isSelectedMonth(month.value)"
+                  [class.hover:text-white]="isSelectedMonth(month.value)"
+                  (click)="selectMonth(month.value, datePopover)"
+                >
+                  {{ month.shortLabel }}
+                </button>
+              }
+            </div>
+          }
         </div>
       </ng-template>
     </brn-popover>
@@ -118,9 +157,24 @@ export class UiDateSelector {
   readonly value = model<string>('');
 
   protected readonly months = MONTHS;
+  protected readonly pickerView = signal<PickerView>('month');
   protected readonly pickerYear = signal(new Date().getFullYear());
+  protected readonly yearRangeStart = signal(getYearRangeStart(new Date().getFullYear()));
 
   protected readonly selectedDate = computed(() => parseYearMonth(this.value()));
+
+  protected readonly yearOptions = computed(() =>
+    Array.from({ length: YEAR_PAGE_SIZE }, (_, index) => this.yearRangeStart() + index),
+  );
+
+  protected readonly headerLabel = computed(() => {
+    if (this.pickerView() === 'month') {
+      return String(this.pickerYear());
+    }
+
+    const years = this.yearOptions();
+    return `${years[0]} - ${years[years.length - 1]}`;
+  });
 
   protected readonly displayValue = computed(() => {
     const selected = this.selectedDate();
@@ -133,11 +187,44 @@ export class UiDateSelector {
   });
 
   protected syncPickerYear(): void {
-    this.pickerYear.set(this.selectedDate()?.year ?? new Date().getFullYear());
+    const year = this.selectedDate()?.year ?? new Date().getFullYear();
+    this.pickerYear.set(year);
+    this.yearRangeStart.set(getYearRangeStart(year));
+    this.pickerView.set('month');
   }
 
-  protected shiftYear(delta: number): void {
+  protected shiftHeader(delta: number): void {
+    if (this.pickerView() === 'year') {
+      this.yearRangeStart.update((year) => year + delta * YEAR_PAGE_SIZE);
+      return;
+    }
+
     this.pickerYear.update((year) => year + delta);
+  }
+
+  protected toggleYearPicker(): void {
+    if (this.pickerView() === 'year') {
+      this.pickerView.set('month');
+      return;
+    }
+
+    this.yearRangeStart.set(getYearRangeStart(this.pickerYear()));
+    this.pickerView.set('year');
+  }
+
+  protected isSelectedYear(year: number): boolean {
+    return this.selectedDate()?.year === year;
+  }
+
+  protected selectYear(year: number): void {
+    const selected = this.selectedDate();
+    this.pickerYear.set(year);
+
+    if (selected) {
+      this.value.set(formatYearMonth(year, selected.month));
+    }
+
+    this.pickerView.set('month');
   }
 
   protected isSelectedMonth(month: number): boolean {
