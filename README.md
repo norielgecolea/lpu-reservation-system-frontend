@@ -1,1 +1,1 @@
-# lpuL-reservation-system
+# lpul-reservation-system-frontend
