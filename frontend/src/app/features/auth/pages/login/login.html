@@ -1,5 +1,5 @@
 <div
-  class="relative flex min-h-dvh w-full items-center justify-center overflow-hidden bg-gray-500 p-2 sm:p-6"
+  class="relative flex min-h-dvh w-full items-center justify-center overflow-hidden bg-gray-400 p-2 sm:p-6"
 >
   <div
     class="absolute inset-0 bg-cover bg-center opacity-30"
@@ -10,18 +10,20 @@
   <div
     class="surface relative z-10 grid w-full max-w-5xl overflow-hidden rounded-xl border-0! md:grid-cols-[1.05fr_0.95fr]"
   >
-    <div class="relative hidden min-h-155 overflow-hidden bg-gray-500 md:block">
+    <div class="relative hidden min-h-155 overflow-hidden bg-gray-400 md:block">
       <img src="/lpu-building.webp" alt="LPU Laguna campus" class="h-full w-full object-cover" />
     </div>
 
-    <div class="relative flex flex-col justify-center gap-6 px-5 py-8 sm:gap-8 sm:px-10 sm:py-10 md:py-14">
+    <div
+      class="relative flex flex-col justify-center gap-6 px-5 py-8 sm:gap-8 sm:px-10 sm:py-10 md:py-14 bg-gray-100"
+    >
       <header class="relative flex items-center gap-3 sm:gap-4">
         <img
           src="/logo.svg"
           alt="LPU Laguna"
           class="h-14 w-14 shrink-0 object-contain sm:h-20 sm:w-20"
         />
-        <h1 class="text-xl font-black leading-tight text-gray-950 sm:whitespace-nowrap sm:text-3xl">
+        <h1 class="text-xl font-black leading-tight text-black sm:whitespace-nowrap sm:text-3xl">
           LPU - Laguna<br />Reservation System
         </h1>
       </header>
@@ -59,7 +61,7 @@
               (click)="showPassword.set(!showPassword())"
               [attr.aria-label]="showPassword() ? 'Hide password' : 'Show password'"
               [attr.aria-pressed]="showPassword()"
-              class="absolute inset-y-0 right-0 flex items-center px-3 text-gray-500 transition-colors duration-200 hover:text-secondary focus-visible:text-primary focus-visible:outline-none"
+              class="absolute inset-y-0 right-0 flex items-center px-3 text-gray-400 transition-colors duration-200 hover:text-secondary focus-visible:text-primary focus-visible:outline-none"
             >
               <ui-icon [name]="showPassword() ? 'visibility_off' : 'visibility'" class="text-xl" />
             </button>

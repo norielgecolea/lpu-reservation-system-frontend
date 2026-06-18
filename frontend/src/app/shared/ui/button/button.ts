@@ -1,8 +1,10 @@
 import { Directive } from '@angular/core';
+import { BrnButton } from '@spartan-ng/brain/button';
 
-/** Button: primary by default, secondary on hover. */
+/** Button: primary by default, secondary on hover. Built on spartan/brain button. */
 @Directive({
   selector: 'button[uiButton], a[uiButton]',
+  hostDirectives: [{ directive: BrnButton, inputs: ['disabled'] }],
   host: {
     class:
       'inline-flex items-center justify-center gap-2 rounded-lg ' +

@@ -1,34 +1,13 @@
-<div class="flex min-h-dvh w-full flex-col bg-[#f6f7fb] text-gray-900 lg:flex-row">
+<div class="flex min-h-dvh w-full flex-col bg-gray-100 text-black lg:flex-row">
   <app-side-nav />
 
   <main class="flex min-h-0 flex-1 flex-col gap-5 overflow-auto p-4 sm:p-6">
-    <header
-      class="flex shrink-0 flex-col gap-4 rounded-3xl bg-[linear-gradient(135deg,#5f1830,#8d2546_58%,#c55339)] p-5 text-white shadow-2xl shadow-primary/20 sm:flex-row sm:items-end sm:justify-between sm:p-7"
-    >
-      <div>
-        <p class="text-sm font-semibold uppercase tracking-[0.2em] text-white/70">Admin overview</p>
-        <h1 class="mt-2 text-2xl font-black tracking-tight sm:text-4xl">
-          LPU - L RESERVATION SYSTEM
-        </h1>
-      </div>
-      <button
-        type="button"
-        class="flex w-fit cursor-pointer items-center gap-2 rounded-xl bg-white/15 bg-[linear-gradient(110deg,rgba(255,255,255,0.12),rgba(255,255,255,0.34),rgba(255,255,255,0.12))] px-4 py-2 text-sm font-bold text-white ring-1 ring-white/20 backdrop-blur transition hover:bg-white/20"
-      >
-        <ui-icon name="calendar_today" class="text-base" />
-        <span>2026</span>
-        <ui-icon name="expand_more" class="text-base" />
-      </button>
-    </header>
-
     <section class="grid shrink-0 grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
       @for (s of stats; track s.label) {
-        <div
-          class="surface rounded-2xl p-4 transition duration-200 hover:-translate-y-1 hover:shadow-2xl"
-        >
+        <div class="surface rounded-2xl p-4 shadow-sm">
           <div class="flex items-start justify-between">
             <div class="flex flex-col gap-1.5">
-              <span class="text-sm font-medium text-gray-500">{{ s.label }}</span>
+              <span class="text-sm font-medium text-gray-400">{{ s.label }}</span>
               <span class="text-3xl font-extrabold" [class]="s.valueColor">{{ s.value }}</span>
               <span
                 class="flex w-fit items-center gap-1 rounded-full px-2 py-0.5 text-xs font-semibold"
@@ -52,58 +31,19 @@
       }
     </section>
 
-    <section class="surface flex min-h-[420px] flex-1 flex-col rounded-3xl p-4 sm:p-6">
+    <section class="surface flex min-h-105 flex-1 flex-col rounded-3xl p-4 shadow-sm sm:p-6">
       <div class="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h2 class="text-xl font-black text-gray-950">Reservation activity</h2>
-          <p class="text-sm text-gray-500">Requests by selected range</p>
-        </div>
-        <div class="flex items-center gap-1 rounded-lg border border-gray-300 p-1">
-          @for (r of ranges; track r) {
-            <button
-              type="button"
-              (click)="selectRange(r)"
-              class="cursor-pointer rounded-md px-3 py-1.5 text-sm font-bold transition-all duration-200 sm:px-5"
-              [class.bg-primary]="activeRange() === r"
-              [class.text-white]="activeRange() === r"
-              [class.shadow-md]="activeRange() === r"
-              [class.text-gray-600]="activeRange() !== r"
-              [class.hover:text-gray-900]="activeRange() !== r"
-            >
-              {{ r }}
-            </button>
-          }
+        <ui-segmented [options]="categories" [value]="activeCategory()" (valueChange)="selectCategory($any($event))" />
+        <div class="flex items-center gap-2">
+          <ui-date-selector [value]="activeYear()" />
+          <ui-segmented [options]="ranges" [value]="activeRange()" (valueChange)="selectRange($any($event))" />
         </div>
       </div>
 
-      <div class="grid min-h-0 flex-1 gap-4 lg:grid-cols-[1fr_18rem]">
-        <div
-          class="flex min-h-[260px] items-end gap-3 rounded-2xl border border-gray-100 bg-gradient-to-b from-gray-50 to-white p-4"
-        >
-          @for (bar of [42, 58, 36, 74, 62, 88, 69, 93, 76, 82, 68, 91]; track $index) {
-            <div class="flex h-full flex-1 items-end">
-              <div
-                class="w-full rounded-t-xl bg-gradient-to-t from-primary to-secondary shadow-lg shadow-primary/10 transition duration-300 hover:scale-105"
-                [style.height.%]="bar"
-              ></div>
-            </div>
-          }
-        </div>
-
-        <div class="grid gap-3 sm:grid-cols-3 lg:grid-cols-1">
-          <div class="rounded-2xl bg-primary/5 p-4">
-            <p class="text-sm font-semibold text-gray-500">Peak month</p>
-            <p class="mt-1 text-2xl font-black text-primary">September</p>
-          </div>
-          <div class="rounded-2xl bg-emerald-50 p-4">
-            <p class="text-sm font-semibold text-gray-500">Approval rate</p>
-            <p class="mt-1 text-2xl font-black text-emerald-600">86%</p>
-          </div>
-          <div class="rounded-2xl bg-orange-50 p-4">
-            <p class="text-sm font-semibold text-gray-500">Avg. response</p>
-            <p class="mt-1 text-2xl font-black text-orange-500">1.8h</p>
-          </div>
-        </div>
+      <div
+        class="flex min-h-65 flex-1 items-center justify-center rounded-2xl border border-gray-100 bg-gray-50 p-4 text-sm font-medium text-gray-400"
+      >
+        No data
       </div>
     </section>
   </main>
