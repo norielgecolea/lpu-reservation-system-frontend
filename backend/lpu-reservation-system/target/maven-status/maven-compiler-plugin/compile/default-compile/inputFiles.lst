@@ -10,6 +10,7 @@
 /Users/norielgecolea/Desktop/Development/development/LPU/lpu-reservation-system/backend/lpu-reservation-system/src/main/java/org/lpu/dev/codes/model/dto/DeleteUserRequest.java
 /Users/norielgecolea/Desktop/Development/development/LPU/lpu-reservation-system/backend/lpu-reservation-system/src/main/java/org/lpu/dev/codes/model/dto/LoginRequest.java
 /Users/norielgecolea/Desktop/Development/development/LPU/lpu-reservation-system/backend/lpu-reservation-system/src/main/java/org/lpu/dev/codes/model/dto/PopulateUserList.java
+/Users/norielgecolea/Desktop/Development/development/LPU/lpu-reservation-system/backend/lpu-reservation-system/src/main/java/org/lpu/dev/codes/model/dto/UpdateUserRequest.java
 /Users/norielgecolea/Desktop/Development/development/LPU/lpu-reservation-system/backend/lpu-reservation-system/src/main/java/org/lpu/dev/codes/package-info.java
 /Users/norielgecolea/Desktop/Development/development/LPU/lpu-reservation-system/backend/lpu-reservation-system/src/main/java/org/lpu/dev/codes/repository/UserRepository.java
 /Users/norielgecolea/Desktop/Development/development/LPU/lpu-reservation-system/backend/lpu-reservation-system/src/main/java/org/lpu/dev/codes/runners/EmailTestRunner.java

@@ -21,7 +21,21 @@ public class UserRepository {
         entityManager.flush();
        
     }
+    public boolean existsByRole(String role) {
 
+        String hql = """
+            SELECT COUNT(u)
+            FROM Users u
+            WHERE u.role = :role
+            """;
+
+        Long count = entityManager
+                .createQuery(hql, Long.class)
+                .setParameter("role", role)
+                .getSingleResult();
+
+        return count > 0;
+    }
     public Users findByUsername(String username) {
 
         String hql = """

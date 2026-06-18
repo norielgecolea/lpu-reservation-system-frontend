@@ -4,6 +4,7 @@ import org.lpu.dev.codes.model.apiresponse.AccountStatementResponse;
 import org.lpu.dev.codes.model.apiresponse.PopulateUsersResponse;
 import org.lpu.dev.codes.model.data.Users;
 import org.lpu.dev.codes.model.dto.DeleteUserRequest;
+import org.lpu.dev.codes.model.dto.UpdateUserRequest;
 import org.lpu.dev.codes.services.JWTService;
 import org.lpu.dev.codes.services.SuperAdminUserService;
 import org.lpu.dev.codes.services.UserService;
@@ -13,6 +14,7 @@ import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -124,5 +126,23 @@ public class UserManagementController {
 		} else {
 			return null;
 		}
+	}
+	//update user
+	@PutMapping("/admin/updateuser")
+	public AccountStatementResponse updateUser(
+	        @RequestHeader("Authorization") String authHeader,
+	        @RequestBody UpdateUserRequest request) {
+
+	    String token = authHeader.replace("LpuL ", "");
+
+	    if ("SUPERADMIN".equals(jwtService.getRole(token))) {
+	        return userService.updateUser(request);
+	    }
+
+	    AccountStatementResponse response = new AccountStatementResponse();
+	    response.setSuccess(false);
+	    response.setMessage("Unauthorized access");
+
+	    return response;
 	}
 }

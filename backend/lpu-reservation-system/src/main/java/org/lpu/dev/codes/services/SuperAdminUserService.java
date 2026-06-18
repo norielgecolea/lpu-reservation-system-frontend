@@ -33,8 +33,60 @@ public class SuperAdminUserService {
 
 	
 
-	
 
+	
+	@Transactional
+	public void createDefaultSuperAdmin() {
+
+	    try {
+
+	        logger.info("Checking for existing SUPERADMIN account...");
+
+	        if (userRepository.existsByRole("SUPERADMIN")) {
+
+	            logger.info(
+	                "SUPERADMIN account already exists. Skipping creation."
+	            );
+
+	            return;
+	        }
+
+	        logger.warn(
+	            "No SUPERADMIN account found. Creating default SUPERADMIN..."
+	        );
+
+	        Users superAdmin = new Users();
+
+	        superAdmin.setUsername("superadmin");
+	        superAdmin.setFullname("System Super Administrator");
+	        superAdmin.setRole("SUPERADMIN");
+	        superAdmin.setEmail("superadmin@lpu.edu.ph");
+	        superAdmin.setEmployeeId("SUPER001");
+	        superAdmin.setStatus("ACTIVE");
+
+	        superAdmin.setPasswordHash(
+	            passwordEncoder.encode("SuperAdmin@123")
+	        );
+
+	        userRepository.save(superAdmin);
+
+	        logger.info("=======================================");
+	        logger.info("DEFAULT SUPERADMIN CREATED SUCCESSFULLY");
+	        logger.info("Username   : {}", superAdmin.getUsername());
+	        logger.info("EmployeeID : {}", superAdmin.getEmployeeId());
+	        logger.info("Email      : {}", superAdmin.getEmail());
+	        logger.info("Role       : {}", superAdmin.getRole());
+	        logger.info("=======================================");
+
+	    } catch (Exception e) {
+
+	        logger.error(
+	            "Failed to create default SUPERADMIN account",
+	            e
+	        );
+	    }
+	}
+	
 	@Transactional
 	public Users findByUserName(String username) {
 		Users result = userRepository.findByUsername(username.toLowerCase());
@@ -277,11 +329,18 @@ public class SuperAdminUserService {
 
 	    try {
 
+	        logger.info("Update user request received. Old Employee ID: {}, New Employee ID: {}",
+	                request.getOldEmployeeId(),
+	                request.getEmployeeId());
+
 	        Users user =
 	                userRepository.findByEmployeeId(
 	                        request.getOldEmployeeId());
 
 	        if (user == null) {
+
+	            logger.warn("User not found. Employee ID: {}",
+	                    request.getOldEmployeeId());
 
 	            response.setSuccess(false);
 	            response.setMessage("User not found");
@@ -289,15 +348,25 @@ public class SuperAdminUserService {
 	            return response;
 	        }
 
+	        logger.info("Found user: {} ({})",
+	                user.getFullname(),
+	                user.getEmployeeId());
+
 	        // Check duplicate employee ID
 	        if (!request.getOldEmployeeId()
 	                .equalsIgnoreCase(request.getEmployeeId())) {
+
+	            logger.info("Employee ID change detected. Checking duplicate for {}",
+	                    request.getEmployeeId());
 
 	            Users existing =
 	                    userRepository.findByEmployeeId(
 	                            request.getEmployeeId());
 
 	            if (existing != null) {
+
+	                logger.warn("Duplicate Employee ID found: {}",
+	                        request.getEmployeeId());
 
 	                response.setSuccess(false);
 	                response.setMessage(
@@ -306,6 +375,10 @@ public class SuperAdminUserService {
 	                return response;
 	            }
 	        }
+
+	        logger.info("Updating user details...");
+	        
+	        user.setUsername(request.getUsername());
 
 	        user.setEmployeeId(
 	                request.getEmployeeId().trim());
@@ -321,6 +394,9 @@ public class SuperAdminUserService {
 
 	        userRepository.save(user);
 
+	        logger.info("User updated successfully. Employee ID: {}",
+	                user.getEmployeeId());
+
 	        response.setSuccess(true);
 	        response.setMessage(
 	                "Account updated successfully");
@@ -330,8 +406,9 @@ public class SuperAdminUserService {
 	    } catch (Exception e) {
 
 	        logger.error(
-	                "Failed updating user {}",
+	                "Failed updating user. Old Employee ID: {}, Request: {}",
 	                request.getOldEmployeeId(),
+	                request,
 	                e);
 
 	        response.setSuccess(false);

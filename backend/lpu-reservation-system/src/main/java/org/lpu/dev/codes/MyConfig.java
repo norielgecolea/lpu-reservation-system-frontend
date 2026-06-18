@@ -15,6 +15,7 @@ public class MyConfig {
 	private static final Logger LOGGER = Logger.getLogger(MyConfig.class.getName());
 	
 	private StandardServiceRegistry ssr;
+
 	
 	// Step 2: Setup the Configuration class
 	public boolean createSessionRegistry(String filename) {
@@ -23,6 +24,7 @@ public class MyConfig {
 					.configure(filename)
 					.build();
 			LOGGER.info("database connection created....");
+			
 			return true;
 		} catch (Exception e) {
 			LOGGER.severe("database error connection...");
@@ -37,6 +39,7 @@ public class MyConfig {
 			Metadata xmlMetaData = new MetadataSources(ssr).buildMetadata();
 			sf = xmlMetaData.buildSessionFactory();
 			LOGGER.info("successfully created SessionFactory...");
+			
 			return sf;
 		} catch (Exception e) {
 			LOGGER.severe(e.getMessage());
