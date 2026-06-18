@@ -37,35 +37,35 @@ export class Login {
     this.error.set(null);
 
     this.auth.login({ username, password }).subscribe({
-    next: (res) => {
-      this.loading.set(false);
+      next: (res) => {
+        this.loading.set(false);
 
-      if (!res?.success) {
-        this.error.set(res?.message ?? 'Login failed');
-        return;
-      }
+        if (!res?.success) {
+          this.error.set(res?.message ?? 'Login failed');
+          return;
+        }
 
-      switch (res.role?.toUpperCase()) {
-        case 'SUPERADMIN':
-          this.router.navigateByUrl('/dashboard');
-          break;
+        switch (res.role?.toUpperCase()) {
+          case 'SUPERADMIN':
+            this.router.navigateByUrl('/dashboard');
+            break;
 
-        case 'NEXUSADMIN':
-          this.router.navigateByUrl('/nexus/dashboard');
-          break;
+          case 'NEXUSADMIN':
+            this.router.navigateByUrl('/nexus/dashboard');
+            break;
 
-        case 'FACILITIESADMIN':
-          this.router.navigateByUrl('/facilities/dashboard');
-          break;
+          case 'FACILITIESADMIN':
+            this.router.navigateByUrl('/facilities/dashboard');
+            break;
 
-        case 'EOADMIN':
-          this.router.navigateByUrl('/eo/dashboard');
-          break;
+          case 'EOADMIN':
+            this.router.navigateByUrl('/eo/dashboard');
+            break;
 
-        default:
-          this.error.set(`Unknown role: ${res.role}`);
-      }
-    },
+          default:
+            this.error.set(`Unknown role: ${res.role}`);
+        }
+      },
       error: (err) => {
         this.loading.set(false);
         this.error.set(err?.error?.message ?? 'Unable to reach the server');
