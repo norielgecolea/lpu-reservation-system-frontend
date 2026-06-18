@@ -9,8 +9,7 @@ interface StatCard {
   delta: string;
   trend: 'up' | 'down';
   icon: string;
-  cardBg: string; // colored glass gradient (the old accent color, now the card fill)
-  badgeBg: string; // darkest shade of the accent for the trend pill
+  cardBg: string;
 }
 
 interface CalendarReservation {
@@ -33,7 +32,8 @@ interface UpcomingEvent {
   description?: string;
 }
 
-type Category = 'All' | 'Van' | 'FLT' | 'Gym';
+const CATEGORIES = ['All', 'Van', 'FLT', 'Gym', 'Boardroom', 'Nexus', 'Conference'] as const;
+type Category = (typeof CATEGORIES)[number];
 
 const DAYS_PER_WEEK = 7;
 const MIN_CALENDAR_ROWS = 5;
@@ -88,7 +88,6 @@ function createCalendarDays(value: string): CalendarDay[] {
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class Dashboard {
-
   protected readonly stats: StatCard[] = [
     {
       label: 'Total',
@@ -97,7 +96,6 @@ export class Dashboard {
       trend: 'up',
       icon: 'monitoring',
       cardBg: 'bg-linear-to-br from-primary to-secondary',
-      badgeBg: 'bg-[#3f0f20]',
     },
     {
       label: 'Pending',
@@ -105,8 +103,7 @@ export class Dashboard {
       delta: '12.5%',
       trend: 'up',
       icon: 'pending_actions',
-      cardBg: 'bg-linear-to-br from-orange-400 to-orange-600',
-      badgeBg: 'bg-orange-800',
+      cardBg: 'bg-linear-to-br from-amber-800 to-amber-950',
     },
     {
       label: 'Accepted',
@@ -114,8 +111,7 @@ export class Dashboard {
       delta: '12.5%',
       trend: 'down',
       icon: 'check_circle',
-      cardBg: 'bg-linear-to-br from-green-400 to-green-600',
-      badgeBg: 'bg-green-800',
+      cardBg: 'bg-linear-to-br from-emerald-800 to-emerald-950',
     },
     {
       label: 'Rejected',
@@ -123,14 +119,13 @@ export class Dashboard {
       delta: '12.5%',
       trend: 'down',
       icon: 'cancel',
-      cardBg: 'bg-linear-to-br from-red-400 to-red-600',
-      badgeBg: 'bg-red-800',
+      cardBg: 'bg-linear-to-br from-red-800 to-red-950',
     },
   ];
 
   protected readonly activeDate = signal(DEFAULT_YEAR_MONTH);
 
-  protected readonly categories: Category[] = ['All', 'Van', 'FLT', 'Gym'];
+  protected readonly categories: Category[] = [...CATEGORIES];
   protected readonly activeCategory = signal<Category>('All');
 
   protected selectCategory(c: Category): void {

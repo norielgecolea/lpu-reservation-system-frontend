@@ -95,7 +95,7 @@ function getYearRangeStart(year: number): number {
               brnButton
               type="button"
               [attr.aria-label]="pickerView() === 'year' ? 'Show months' : 'Choose year'"
-              class="flex h-8 cursor-pointer items-center gap-1 rounded-lg px-3 text-sm font-extrabold text-primary hover:bg-secondary/10"
+              class="flex h-8 cursor-pointer items-center gap-1 rounded-lg px-3 text-sm font-extrabold text-black dark:text-white hover:bg-secondary/10"
               (click)="toggleYearPicker()"
             >
               <span>{{ headerLabel() }}</span>

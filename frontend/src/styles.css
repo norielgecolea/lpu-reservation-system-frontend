@@ -91,13 +91,13 @@
     dark:shadow-[inset_0_1px_0_rgba(255,255,255,0.06),0_2px_8px_-2px_rgba(0,0,0,0.5)];
 }
 
-/* Brand chrome: solid, fully-opaque primary→secondary gradient (never washed
-   out, no transparency) with a glass-style sheen — top highlight, soft inner
-   gloss, and a hairline edge — so it reads as a polished glass plate. */
+/* Brand chrome: solid, fully-opaque multi-stop primary→secondary gradient —
+   a lighter brand tint at the top-left flows into primary then secondary for
+   glassy depth. No transparency, identical in light and dark. Hairline edge +
+   highlight + inner gloss read it as a polished glass plate. */
 @utility glass-brand {
-  @apply bg-primary bg-[linear-gradient(160deg,#5f1830,#8d2546)] ring-1 ring-inset ring-white/20
-    shadow-[inset_0_1px_0_rgba(255,255,255,0.25),inset_-1px_0_0_rgba(255,255,255,0.08),0_20px_50px_-22px_rgba(95,24,48,0.6)]
-    dark:bg-[linear-gradient(160deg,#50142b,#78203c)];
+  @apply bg-primary bg-[linear-gradient(158deg,#7a2342,#5f1830_42%,#8d2546)] ring-1 ring-inset ring-white/20
+    shadow-[inset_0_1px_0_rgba(255,255,255,0.25),inset_-1px_0_0_rgba(255,255,255,0.08),0_20px_50px_-22px_rgba(95,24,48,0.6)];
 }
 
 /* Motion utilities */
