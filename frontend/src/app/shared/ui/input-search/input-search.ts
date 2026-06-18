@@ -12,7 +12,7 @@ import { UiIcon } from '../icon/icon';
   template: `
     <ui-icon
       name="search"
-      class="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-lg text-gray-400"
+      class="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-lg text-gray-400 dark:text-zinc-500"
     />
     <input
       uiInput

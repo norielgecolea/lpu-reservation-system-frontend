@@ -3,7 +3,7 @@
     [formGroup]="form"
     (ngSubmit)="save()"
     autocomplete="off"
-    class="surface flex min-h-0 flex-1 flex-col overflow-hidden rounded-2xl"
+    class="surface animate-rise flex min-h-0 flex-1 flex-col overflow-hidden rounded-2xl"
   >
     <div class="mx-5 border-b border-primary/30 py-3.5 sm:mx-7">
       <div class="flex items-center gap-3 text-primary">
@@ -28,11 +28,11 @@
 
     <div class="flex-1 overflow-y-auto p-5 lg:p-7">
       @if (loading()) {
-        <div class="py-10 text-center text-sm text-gray-500">Loading user...</div>
+        <div class="py-10 text-center text-sm text-gray-500 dark:text-zinc-400">Loading user...</div>
       } @else if (ready()) {
         <div class="grid content-start gap-5 sm:grid-cols-2">
           <div class="flex flex-col gap-1.5 sm:col-span-2">
-            <label for="edit-user-fullname" class="text-sm font-bold text-gray-800">
+            <label for="edit-user-fullname" class="text-sm font-bold text-gray-800 dark:text-zinc-200">
               Full Name
             </label>
             <input
@@ -47,7 +47,7 @@
           </div>
 
           <div class="flex flex-col gap-1.5">
-            <label for="edit-user-employee-id" class="text-sm font-bold text-gray-800">
+            <label for="edit-user-employee-id" class="text-sm font-bold text-gray-800 dark:text-zinc-200">
               Employee ID
             </label>
             <input
@@ -62,7 +62,7 @@
           </div>
 
           <div class="flex flex-col gap-1.5">
-            <label for="edit-user-email" class="text-sm font-bold text-gray-800">Email</label>
+            <label for="edit-user-email" class="text-sm font-bold text-gray-800 dark:text-zinc-200">Email</label>
             <input
               uiInput
               id="edit-user-email"
@@ -75,7 +75,7 @@
           </div>
 
           <div class="flex flex-col gap-1.5">
-            <label for="edit-user-username" class="text-sm font-bold text-gray-800">
+            <label for="edit-user-username" class="text-sm font-bold text-gray-800 dark:text-zinc-200">
               Username
             </label>
             <input
@@ -90,12 +90,12 @@
           </div>
 
           <div class="flex flex-col gap-1.5">
-            <label class="text-sm font-bold text-gray-800">Password</label>
+            <label class="text-sm font-bold text-gray-800 dark:text-zinc-200">Password</label>
             <button uiButton type="button">RESET PASSWORD</button>
           </div>
 
           <div class="flex flex-col gap-1.5">
-            <label class="text-sm font-bold text-gray-800">User Role</label>
+            <label class="text-sm font-bold text-gray-800 dark:text-zinc-200">User Role</label>
             <ui-select formControlName="role" placeholder="Select a role" [options]="roles()" />
           </div>
         </div>

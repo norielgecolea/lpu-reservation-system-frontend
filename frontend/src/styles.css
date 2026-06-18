@@ -3,6 +3,9 @@
 @import 'tailwindcss';
 @import '@angular/cdk/overlay-prebuilt.css';
 
+/* Class-based dark mode: toggled via `.dark` on <html> (ThemeService). */
+@custom-variant dark (&:where(.dark, .dark *));
+
 /* Brand tokens. Tailwind's own scales (slate, gray, green, orange, red...)
    are left intact — only the two brand colors are added here. */
 @theme {
@@ -20,8 +23,27 @@
     @apply h-full;
   }
 
+  /* Light: neutral zinc gray-white base with soft lighter highlights so the
+     glass surfaces have tonal variation to read against — no brand tint. */
   body {
-    @apply bg-[#f6f7fb] font-sans text-gray-900 antialiased;
+    @apply font-sans text-gray-900 antialiased;
+    background-color: #e4e4e7;
+    background-image:
+      radial-gradient(58rem 58rem at 6% -12%, rgba(255, 255, 255, 0.9), transparent 60%),
+      radial-gradient(46rem 46rem at 102% 2%, rgba(255, 255, 255, 0.7), transparent 55%),
+      radial-gradient(54rem 54rem at 50% 122%, rgba(244, 244, 245, 0.8), transparent 60%);
+    background-attachment: fixed;
+  }
+
+  /* Dark: zinc-950 base with subtle zinc highlights (neutral spectrum). */
+  .dark body {
+    @apply text-zinc-100;
+    color-scheme: dark;
+    background-color: #09090b;
+    background-image:
+      radial-gradient(58rem 58rem at 6% -12%, rgba(39, 39, 42, 0.9), transparent 60%),
+      radial-gradient(46rem 46rem at 102% 2%, rgba(39, 39, 42, 0.7), transparent 55%),
+      radial-gradient(54rem 54rem at 50% 122%, rgba(24, 24, 27, 0.9), transparent 60%);
   }
 
   .material-symbols-outlined {
@@ -42,14 +64,96 @@
 
 /* Shared soft elevation: tight contact + diffused ambient. */
 @utility elevated {
-  @apply shadow-[0_1px_2px_rgba(15,23,42,0.06),0_8px_24px_-6px_rgba(15,23,42,0.16)] ring-1 ring-inset ring-black/5;
+  @apply shadow-[0_1px_2px_rgba(15,23,42,0.06),0_8px_24px_-6px_rgba(15,23,42,0.16)] ring-1 ring-inset ring-black/5 dark:ring-white/10;
 }
 
 /* Lighter elevation for small controls so they read at the same weight as cards. */
 @utility elevated-sm {
-  @apply shadow-[0_1px_2px_rgba(15,23,42,0.05),0_2px_6px_-2px_rgba(15,23,42,0.10)] ring-1 ring-inset ring-black/5;
+  @apply shadow-[0_1px_2px_rgba(15,23,42,0.05),0_2px_6px_-2px_rgba(15,23,42,0.10)] ring-1 ring-inset ring-black/5 dark:ring-white/10;
 }
 
+/* Frosted glass card: clearly translucent over the brand mesh, blurred, with a
+   bright top highlight + visible hairline so it reads as a real glass plate.
+   Light = white glass / zinc text; dark = zinc glass. All via Tailwind utilities. */
 @utility surface {
-  @apply elevated bg-white/85 backdrop-blur-xl;
+  @apply bg-white/45 backdrop-blur-xl backdrop-saturate-150 ring-1 ring-inset ring-white/60
+    shadow-[inset_0_1px_0_rgba(255,255,255,0.8),0_16px_40px_-12px_rgba(24,24,27,0.18)]
+    dark:bg-zinc-900/50 dark:ring-white/10
+    dark:shadow-[inset_0_1px_0_rgba(255,255,255,0.08),0_18px_44px_-14px_rgba(0,0,0,0.6)];
+}
+
+/* Frosted glass for small controls (inputs, selects, segmented). Translucent +
+   blur + hairline so they match the glass cards at control scale. */
+@utility glass-field {
+  @apply bg-white/55 dark:bg-zinc-800/45 backdrop-blur-md backdrop-saturate-150
+    ring-1 ring-inset ring-white/60 dark:ring-white/10
+    shadow-[inset_0_1px_0_rgba(255,255,255,0.6),0_2px_6px_-2px_rgba(24,24,27,0.12)]
+    dark:shadow-[inset_0_1px_0_rgba(255,255,255,0.06),0_2px_8px_-2px_rgba(0,0,0,0.5)];
+}
+
+/* Brand chrome: solid, fully-opaque primary→secondary gradient (never washed
+   out, no transparency) with a glass-style sheen — top highlight, soft inner
+   gloss, and a hairline edge — so it reads as a polished glass plate. */
+@utility glass-brand {
+  @apply bg-primary bg-[linear-gradient(160deg,#5f1830,#8d2546)] ring-1 ring-inset ring-white/20
+    shadow-[inset_0_1px_0_rgba(255,255,255,0.25),inset_-1px_0_0_rgba(255,255,255,0.08),0_20px_50px_-22px_rgba(95,24,48,0.6)]
+    dark:bg-[linear-gradient(160deg,#50142b,#78203c)];
+}
+
+/* Motion utilities */
+@utility animate-rise {
+  animation: rise 0.55s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@utility animate-fade-in {
+  animation: fade-in 0.45s ease-out both;
+}
+
+@utility animate-float {
+  animation: float 7s ease-in-out infinite;
+}
+
+@utility animate-shimmer {
+  background-size: 220% 100%;
+  animation: shimmer 3.6s ease-in-out infinite;
+}
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(18px) scale(0.985);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes float {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0);
+  }
+  50% {
+    transform: translate3d(0, -14px, 0);
+  }
+}
+
+@keyframes shimmer {
+  0%,
+  100% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
 }

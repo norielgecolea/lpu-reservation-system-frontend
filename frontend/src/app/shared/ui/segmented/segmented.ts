@@ -11,7 +11,7 @@ import { BrnToggleGroupImports } from '@spartan-ng/brain/toggle-group';
   },
   template: `
     <brn-toggle-group
-      class="elevated-sm flex min-w-full items-center gap-1 rounded-lg bg-gray-100 p-0.5 sm:min-w-0"
+      class="glass-field flex min-w-full items-center gap-1 rounded-lg p-0.5 sm:min-w-0"
       [value]="value()"
       (valueChange)="value.set($any($event))"
     >
@@ -19,7 +19,7 @@ import { BrnToggleGroupImports } from '@spartan-ng/brain/toggle-group';
         <button
           brnToggleGroupItem
           [value]="o"
-          class="flex h-8 cursor-pointer items-center rounded-md px-2.5 text-sm font-bold leading-none text-gray-600 transition-all duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] active:scale-[0.97] data-[state=off]:hover:bg-secondary data-[state=off]:hover:text-white data-[state=on]:bg-primary data-[state=on]:text-white sm:px-4"
+          class="flex h-8 cursor-pointer items-center rounded-md px-2.5 text-sm font-bold leading-none text-gray-600 dark:text-zinc-400 transition-all duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] active:scale-[0.97] data-[state=off]:hover:bg-secondary data-[state=off]:hover:text-white data-[state=on]:bg-primary data-[state=on]:text-white sm:px-4"
         >
           {{ o }}
         </button>

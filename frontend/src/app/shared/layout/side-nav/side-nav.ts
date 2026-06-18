@@ -2,6 +2,7 @@ import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import { Router, RouterLink, RouterLinkActive } from '@angular/router';
 
 import { AuthService } from '../../../core/auth/auth.service';
+import { ThemeService } from '../../../core/theme/theme.service';
 import { UiIcon } from '../../ui';
 
 interface NavItem {
@@ -20,8 +21,14 @@ interface NavItem {
 export class SideNav {
   private readonly auth = inject(AuthService);
   private readonly router = inject(Router);
+  private readonly themeService = inject(ThemeService);
 
   protected readonly user = this.auth.user;
+  protected readonly isDark = this.themeService.isDark;
+
+  protected toggleTheme(): void {
+    this.themeService.toggle();
+  }
 
   protected readonly nav: NavItem[] = [
     { label: 'Dashboard', icon: 'grid_view', link: '/dashboard' },

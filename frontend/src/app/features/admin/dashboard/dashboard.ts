@@ -9,9 +9,8 @@ interface StatCard {
   delta: string;
   trend: 'up' | 'down';
   icon: string;
-  iconBg: string;
-  iconFg: string;
-  valueColor: string;
+  cardBg: string; // colored glass gradient (the old accent color, now the card fill)
+  badgeBg: string; // darkest shade of the accent for the trend pill
 }
 
 interface CalendarReservation {
@@ -97,9 +96,8 @@ export class Dashboard {
       delta: '12.5%',
       trend: 'up',
       icon: 'monitoring',
-      iconBg: 'bg-primary/10',
-      iconFg: 'text-primary',
-      valueColor: 'text-primary',
+      cardBg: 'bg-linear-to-br from-primary to-secondary',
+      badgeBg: 'bg-[#3f0f20]',
     },
     {
       label: 'Pending',
@@ -107,9 +105,8 @@ export class Dashboard {
       delta: '12.5%',
       trend: 'up',
       icon: 'pending_actions',
-      iconBg: 'bg-orange-50',
-      iconFg: 'text-orange-500',
-      valueColor: 'text-orange-500',
+      cardBg: 'bg-linear-to-br from-orange-400 to-orange-600',
+      badgeBg: 'bg-orange-800',
     },
     {
       label: 'Accepted',
@@ -117,9 +114,8 @@ export class Dashboard {
       delta: '12.5%',
       trend: 'down',
       icon: 'check_circle',
-      iconBg: 'bg-green-50',
-      iconFg: 'text-green-500',
-      valueColor: 'text-green-600',
+      cardBg: 'bg-linear-to-br from-green-400 to-green-600',
+      badgeBg: 'bg-green-800',
     },
     {
       label: 'Rejected',
@@ -127,9 +123,8 @@ export class Dashboard {
       delta: '12.5%',
       trend: 'down',
       icon: 'cancel',
-      iconBg: 'bg-red-50',
-      iconFg: 'text-red-500',
-      valueColor: 'text-red-600',
+      cardBg: 'bg-linear-to-br from-red-400 to-red-600',
+      badgeBg: 'bg-red-800',
     },
   ];
 

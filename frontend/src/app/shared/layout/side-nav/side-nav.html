@@ -1,5 +1,5 @@
 <aside
-  class="z-30 flex shrink-0 flex-col bg-primary text-white shadow-2xl shadow-primary/20 lg:h-dvh lg:w-64"
+  class="glass-brand z-30 flex shrink-0 flex-col text-white lg:h-dvh lg:w-64"
 >
   <div class="flex items-center justify-between gap-3 border-b border-white/10 px-3 py-2 lg:hidden">
     <div class="flex min-w-0 items-center gap-2">
@@ -10,15 +10,27 @@
       </div>
     </div>
 
-    <button
-      type="button"
-      (click)="logout()"
-      aria-label="Logout"
-      title="Logout"
-      class="flex h-10 w-10 shrink-0 cursor-pointer items-center justify-center rounded-xl bg-white/10 text-white hover:bg-white/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/50"
-    >
-      <ui-icon name="logout" class="text-xl" />
-    </button>
+    <div class="flex shrink-0 items-center gap-2">
+      <button
+        type="button"
+        (click)="toggleTheme()"
+        [attr.aria-label]="isDark() ? 'Switch to light mode' : 'Switch to dark mode'"
+        [title]="isDark() ? 'Light mode' : 'Dark mode'"
+        class="flex h-10 w-10 cursor-pointer items-center justify-center rounded-xl bg-white/10 text-white hover:bg-white/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/50"
+      >
+        <ui-icon [name]="isDark() ? 'light_mode' : 'dark_mode'" class="text-xl" />
+      </button>
+
+      <button
+        type="button"
+        (click)="logout()"
+        aria-label="Logout"
+        title="Logout"
+        class="flex h-10 w-10 cursor-pointer items-center justify-center rounded-xl bg-white/10 text-white hover:bg-white/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/50"
+      >
+        <ui-icon name="logout" class="text-xl" />
+      </button>
+    </div>
   </div>
 
   <div class="hidden items-center gap-3 px-5 py-6 lg:flex">
@@ -54,6 +66,14 @@
       <ui-icon name="account_circle" class="text-xl" />
       <span>{{ user()?.fullname ?? 'Account' }}</span>
     </a>
+    <button
+      type="button"
+      (click)="toggleTheme()"
+      class="flex w-full cursor-pointer items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-white/80 hover:bg-white/10"
+    >
+      <ui-icon [name]="isDark() ? 'light_mode' : 'dark_mode'" class="text-xl" />
+      <span>{{ isDark() ? 'Light Mode' : 'Dark Mode' }}</span>
+    </button>
     <button
       type="button"
       (click)="logout()"

@@ -13,7 +13,8 @@ const BASE =
 
 const VARIANTS: Record<UiButtonVariant, string> = {
   primary: 'border-primary bg-primary text-white hover:border-secondary hover:bg-secondary',
-  secondary: 'border-primary bg-white text-primary hover:border-secondary hover:bg-secondary/10',
+  secondary:
+    'border-primary bg-white dark:bg-zinc-800 text-primary dark:text-zinc-100 hover:border-secondary hover:bg-secondary/10 dark:hover:bg-secondary/25',
 };
 
 /** Button: `variant="primary"` (default) or `variant="secondary"`. Built on spartan/brain button. */
