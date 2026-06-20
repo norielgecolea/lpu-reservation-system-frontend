@@ -8,21 +8,26 @@ import { AuthService } from './auth.service';
 export const authGuard: CanActivateFn = () => {
   const auth = inject(AuthService);
   const router = inject(Router);
-  
-  if (!auth.token()) {
-    return router.parseUrl('/');
+
+  const token = auth.token();
+
+  // 1. No token: block immediately.
+  if (!token) {
+    return router.parseUrl('/login');
   }
 
-  // Already validated this session — skip the round-trip.
-  if (auth.user()) {
-    return true;
-  }
-
+  // 2. Validate session with backend.
   return auth.me().pipe(
-    map((res) => (res.success ? true : router.parseUrl('/'))),
+    map((res) => {
+      if (res.success) {
+        return true;
+      }
+      auth.logout();
+      return router.parseUrl('/login');
+    }),
     catchError(() => {
       auth.logout();
-      return of(router.parseUrl('/'));
+      return of(router.parseUrl('/login'));
     }),
   );
 };

@@ -10,7 +10,7 @@ import { Observable, catchError, throwError } from 'rxjs';
 import { Router } from '@angular/router';
 
 @Injectable()
-export class AuthInterceptor implements HttpInterceptor {
+export class uthInterceptor implements HttpInterceptor {
 
   constructor(private router: Router) {}
 
