@@ -22,20 +22,43 @@ export class Equipments {
   protected readonly showToast = signal(false);
   protected readonly toastMessage = signal('');
   protected readonly toastSuccess = signal(false);
+protected readonly sortField = signal<'name' | 'facilityName' | 'status'>('name');
+protected readonly sortDirection = signal<'asc' | 'desc'>('asc');
+ protected readonly filtered = computed(() => {
+  const q = this.search().trim().toLowerCase();
 
-  protected readonly filtered = computed(() => {
-    const q = this.search().trim().toLowerCase();
-    const rows = this.equipments();
+  let rows = this.equipments();
 
-    if (!q) return rows;
-
-    return rows.filter((equipment) =>
+  if (q) {
+    rows = rows.filter((equipment) =>
       [equipment.name, equipment.facilityName, equipment.status].some((field) =>
         field?.toLowerCase().includes(q),
       ),
     );
-  });
+  }
 
+  const field = this.sortField();
+  const direction = this.sortDirection();
+
+  return [...rows].sort((a, b) => {
+    const valueA = (a[field] ?? '').toString().toLowerCase();
+    const valueB = (b[field] ?? '').toString().toLowerCase();
+
+    const comparison = valueA.localeCompare(valueB);
+
+    return direction === 'asc' ? comparison : -comparison;
+  });
+});
+protected sortBy(field: 'name' | 'facilityName' | 'status'): void {
+  if (this.sortField() === field) {
+    this.sortDirection.set(
+      this.sortDirection() === 'asc' ? 'desc' : 'asc',
+    );
+  } else {
+    this.sortField.set(field);
+    this.sortDirection.set('asc');
+  }
+}
   constructor() {
     this.load();
   }

@@ -12,9 +12,26 @@
       <table class="w-full min-w-150 border-collapse text-left text-sm">
         <thead class="sticky top-0 z-10">
           <tr class="bg-primary text-xs font-bold uppercase tracking-wide text-white">
-            <th class="px-5 py-4">Name</th>
-            <th class="px-4 py-3">Service</th>
-            <th class="px-4 py-3 text-center">Status</th>
+           <th
+  class="px-5 py-4 cursor-pointer"
+  (click)="sortBy('name')"
+>
+  Name
+</th>
+
+<th
+  class="px-4 py-3 cursor-pointer"
+  (click)="sortBy('facilityName')"
+>
+  Service
+</th>
+
+<th
+  class="px-4 py-3 text-center cursor-pointer"
+  (click)="sortBy('status')"
+>
+  Status
+</th>
             <th class="px-4 py-3 text-center">Actions</th>
           </tr>
         </thead>

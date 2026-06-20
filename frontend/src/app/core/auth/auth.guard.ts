@@ -8,7 +8,7 @@ import { AuthService } from './auth.service';
 export const authGuard: CanActivateFn = () => {
   const auth = inject(AuthService);
   const router = inject(Router);
-
+  
   if (!auth.token()) {
     return router.parseUrl('/');
   }
