@@ -1,6 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { forkJoin } from 'rxjs';
 
 import { AdminShell } from '../../../shared/layout/admin-shell/admin-shell';
 import { UiButton, UiIcon, UiInput, UiSelect, UiSelectOption } from '../../../shared/ui';
@@ -61,16 +62,19 @@ export class EditEquipment {
     this.loading.set(true);
     this.error.set(null);
 
-    this.api.list().subscribe({
-      next: (res) => {
+    forkJoin({
+      equipments: this.api.list(),
+      facilities: this.api.listFacilities(),
+    }).subscribe({
+      next: ({ equipments, facilities }) => {
         this.loading.set(false);
 
-        if (!res?.success) {
-          this.error.set(res?.message ?? 'Failed to load equipment');
+        if (!equipments?.success) {
+          this.error.set(equipments?.message ?? 'Failed to load equipment');
           return;
         }
 
-        const equipment = (res.equipment ?? []).find((row) => row.id === id);
+        const equipment = (equipments.equipment ?? []).find((row) => row.id === id);
 
         if (!equipment) {
           this.error.set('Equipment not found');
@@ -78,7 +82,7 @@ export class EditEquipment {
         }
 
         this.currentStatus.set(equipment.status);
-        this.facilities.set(toFacilityOptions(res.equipment ?? []));
+        this.facilities.set(toFacilityOptions(facilities ?? []));
         this.form.setValue({
           name: equipment.name ?? '',
           facilityId: String(equipment.facilityId),

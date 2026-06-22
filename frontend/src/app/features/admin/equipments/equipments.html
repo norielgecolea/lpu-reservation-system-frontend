@@ -1,6 +1,11 @@
 <app-admin-shell>
   <section class="animate-rise flex shrink-0 flex-col gap-3 sm:flex-row sm:items-center">
     <ui-input-search class="flex-1" [value]="search()" (valueChange)="onSearch($event)" />
+    <ui-segmented
+      [options]="serviceFilters"
+      [value]="activeService()"
+      (valueChange)="selectService($any($event))"
+    />
     <a uiButton routerLink="/equipments/new" class="w-full sm:w-auto">
       <ui-icon name="add" [size]="20" />
       <span>ADD EQUIPMENT</span>

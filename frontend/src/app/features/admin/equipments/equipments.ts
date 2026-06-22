@@ -2,13 +2,32 @@ import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@a
 import { RouterLink } from '@angular/router';
 
 import { AdminShell } from '../../../shared/layout/admin-shell/admin-shell';
-import { UiButton, UiIcon, UiInputSearch, UiStatusBadge, UiToast } from '../../../shared/ui';
+import {
+  UiButton,
+  UiIcon,
+  UiInputSearch,
+  UiSegmented,
+  UiStatusBadge,
+  UiToast,
+} from '../../../shared/ui';
 import { EquipmentRow } from './equipments.models';
 import { EquipmentsService } from './equipments.service';
 
+const SERVICE_FILTERS = ['All', 'FLT', 'Gym', 'Boardroom', 'Nexus', 'Conference'] as const;
+type ServiceFilter = (typeof SERVICE_FILTERS)[number];
+
 @Component({
   selector: 'app-equipments',
-  imports: [RouterLink, AdminShell, UiButton, UiIcon, UiInputSearch, UiStatusBadge, UiToast],
+  imports: [
+    RouterLink,
+    AdminShell,
+    UiButton,
+    UiIcon,
+    UiInputSearch,
+    UiSegmented,
+    UiStatusBadge,
+    UiToast,
+  ],
   templateUrl: './equipments.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -22,43 +41,56 @@ export class Equipments {
   protected readonly showToast = signal(false);
   protected readonly toastMessage = signal('');
   protected readonly toastSuccess = signal(false);
-protected readonly sortField = signal<'name' | 'facilityName' | 'status'>('name');
-protected readonly sortDirection = signal<'asc' | 'desc'>('asc');
- protected readonly filtered = computed(() => {
-  const q = this.search().trim().toLowerCase();
+  protected readonly serviceFilters: ServiceFilter[] = [...SERVICE_FILTERS];
+  protected readonly activeService = signal<ServiceFilter>('All');
+  protected readonly sortField = signal<'name' | 'facilityName' | 'status'>('name');
+  protected readonly sortDirection = signal<'asc' | 'desc'>('asc');
 
-  let rows = this.equipments();
+  protected readonly filtered = computed(() => {
+    const q = this.search().trim().toLowerCase();
+    const service = this.activeService().toLowerCase();
 
-  if (q) {
-    rows = rows.filter((equipment) =>
-      [equipment.name, equipment.facilityName, equipment.status].some((field) =>
-        field?.toLowerCase().includes(q),
-      ),
-    );
-  }
+    let rows = this.equipments();
 
-  const field = this.sortField();
-  const direction = this.sortDirection();
+    if (service !== 'all') {
+      rows = rows.filter((equipment) =>
+        equipment.facilityName?.toLowerCase().includes(service),
+      );
+    }
 
-  return [...rows].sort((a, b) => {
-    const valueA = (a[field] ?? '').toString().toLowerCase();
-    const valueB = (b[field] ?? '').toString().toLowerCase();
+    if (q) {
+      rows = rows.filter((equipment) =>
+        [equipment.name, equipment.facilityName, equipment.status].some((field) =>
+          field?.toLowerCase().includes(q),
+        ),
+      );
+    }
 
-    const comparison = valueA.localeCompare(valueB);
+    const field = this.sortField();
+    const direction = this.sortDirection();
 
-    return direction === 'asc' ? comparison : -comparison;
+    return [...rows].sort((a, b) => {
+      const valueA = (a[field] ?? '').toString().toLowerCase();
+      const valueB = (b[field] ?? '').toString().toLowerCase();
+
+      const comparison = valueA.localeCompare(valueB);
+
+      return direction === 'asc' ? comparison : -comparison;
+    });
   });
-});
-protected sortBy(field: 'name' | 'facilityName' | 'status'): void {
-  if (this.sortField() === field) {
-    this.sortDirection.set(
-      this.sortDirection() === 'asc' ? 'desc' : 'asc',
-    );
-  } else {
-    this.sortField.set(field);
-    this.sortDirection.set('asc');
+
+  protected selectService(service: ServiceFilter): void {
+    this.activeService.set(service);
   }
-}
+
+  protected sortBy(field: 'name' | 'facilityName' | 'status'): void {
+    if (this.sortField() === field) {
+      this.sortDirection.set(this.sortDirection() === 'asc' ? 'desc' : 'asc');
+    } else {
+      this.sortField.set(field);
+      this.sortDirection.set('asc');
+    }
+  }
   constructor() {
     this.load();
   }
@@ -128,7 +160,7 @@ protected sortBy(field: 'name' | 'facilityName' | 'status'): void {
               row.id === equipment.id
                 ? {
                     ...row,
-                    status: this.isActive(row.status) ? 'UNAVAILABLE' : 'AVAILABLE',
+                    status: this.isActive(row.status) ? 'INACTIVE' : 'ACTIVE',
                   }
                 : row,
             ),

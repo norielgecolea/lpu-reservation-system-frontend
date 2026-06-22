@@ -36,7 +36,7 @@ interface UpcomingEvent {
   description?: string;
 }
 
-const CATEGORIES = ['All', 'Van', 'FLT', 'Gym', 'Boardroom', 'Nexus', 'Conference'] as const;
+const CATEGORIES = ['All', 'FLT', 'Gym', 'Boardroom', 'Nexus', 'Conference'] as const;
 type Category = (typeof CATEGORIES)[number];
 type EventCategory = Exclude<Category, 'All'>;
 
@@ -79,14 +79,6 @@ const HARDCODED_EVENTS: UpcomingEvent[] = [
   },
   {
     id: 'e5',
-    title: 'Van Dispatch',
-    date: '2026-06-25',
-    time: '8:00 AM',
-    category: 'Van',
-    description: 'Campus transport reservation',
-  },
-  {
-    id: 'e6',
     title: 'Client Visit Prep',
     date: '2026-06-25',
     time: '2:30 PM',
@@ -94,7 +86,7 @@ const HARDCODED_EVENTS: UpcomingEvent[] = [
     description: 'Prepare materials and room layout',
   },
   {
-    id: 'e7',
+    id: 'e6',
     title: 'AV Equipment Setup',
     date: '2026-06-25',
     time: '4:00 PM',
@@ -102,7 +94,7 @@ const HARDCODED_EVENTS: UpcomingEvent[] = [
     description: 'Projector, microphones, and display check',
   },
   {
-    id: 'e8',
+    id: 'e7',
     title: 'Nexus Lab Booking',
     date: '2026-07-02',
     time: '2:00 PM',
