@@ -19,7 +19,7 @@ export interface PopulateEquipmentsResponse {
 
 export interface CreateEquipmentRequest {
   name: string;
-  facilityId: number;
+  id: number;
   status: string;
 }
 

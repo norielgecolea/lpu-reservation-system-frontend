@@ -27,7 +27,7 @@ export class AddEquipment {
   protected readonly form = this.fb.nonNullable.group({
     name: ['', [Validators.required]],
     facilityId: ['', [Validators.required]],
-    status: ['AVAILABLE', [Validators.required]],
+    status: ['ACTIVE', [Validators.required]],
   });
 
   constructor() {
@@ -55,7 +55,7 @@ export class AddEquipment {
     this.api
       .create({
         name: v.name,
-        facilityId: Number(v.facilityId),
+        id: Number(v.facilityId),
         status: v.status,
       })
       .subscribe({

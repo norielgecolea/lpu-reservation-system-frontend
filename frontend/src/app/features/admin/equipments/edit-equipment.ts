@@ -41,7 +41,7 @@ export class EditEquipment {
   protected readonly form = this.fb.nonNullable.group({
     name: ['', [Validators.required]],
     facilityId: ['', [Validators.required]],
-    status: ['AVAILABLE', [Validators.required]],
+    status: ['ACTIVE', [Validators.required]],
   });
 
   constructor() {
