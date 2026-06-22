@@ -128,7 +128,7 @@ protected sortBy(field: 'name' | 'facilityName' | 'status'): void {
               row.id === equipment.id
                 ? {
                     ...row,
-                    status: this.isActive(row.status) ? 'INACTIVE' : 'ACTIVE',
+                    status: this.isActive(row.status) ? 'UNAVAILABLE' : 'AVAILABLE',
                   }
                 : row,
             ),
