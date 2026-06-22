@@ -1,3 +1,8 @@
+export interface Facility {
+  id: number;
+  facilityName: string | null;
+  description: string;
+}
 export interface EquipmentRow {
   id: number;
   name: string | null;

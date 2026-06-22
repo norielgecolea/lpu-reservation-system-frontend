@@ -5,6 +5,7 @@ import { environment } from '../../../../environments/environment';
 import {
   CreateEquipmentRequest,
   EquipmentStatementResponse,
+  Facility,
   PopulateEquipmentsResponse,
   UpdateEquipmentRequest,
 } from './equipments.models';
@@ -16,6 +17,10 @@ export class EquipmentsService {
 
   list() {
     return this.http.get<PopulateEquipmentsResponse>(`${this.base}/admin/equipment`);
+  }
+
+  listFacilities() {
+    return this.http.get<Facility[]>(`${this.base}/admin/facility`);
   }
 
   create(payload: CreateEquipmentRequest) {

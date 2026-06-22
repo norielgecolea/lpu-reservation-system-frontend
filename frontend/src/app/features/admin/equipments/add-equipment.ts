@@ -31,11 +31,12 @@ export class AddEquipment {
   });
 
   constructor() {
-    this.api.list().subscribe({
-      next: (res) => {
-        if (res?.success) {
-          this.facilities.set(toFacilityOptions(res.equipment ?? []));
-        }
+    this.api.listFacilities().subscribe({
+      next: (facilities) => {
+        this.facilities.set(toFacilityOptions(facilities ?? []));
+      },
+      error: (err) => {
+        this.error.set(err?.error?.message ?? 'Unable to load services');
       },
     });
   }
