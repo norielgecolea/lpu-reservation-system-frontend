@@ -21,7 +21,7 @@ export interface UiSelectOption {
   changeDetection: ChangeDetectionStrategy.OnPush,
   providers: [{ provide: NG_VALUE_ACCESSOR, useExisting: forwardRef(() => UiSelect), multi: true }],
   template: `
-    <brn-popover sideOffset="6" align="start">
+    <brn-popover sideOffset="6" align="start" closeOnOutsidePointerEvents>
       <div brnSelect [value]="value()" (valueChange)="select($event)" [disabled]="disabled()">
         <button
           brnSelectTrigger
