@@ -1,43 +1,111 @@
 <app-admin-shell>
   <section class="animate-rise grid shrink-0 grid-cols-2 gap-3 sm:gap-4 xl:grid-cols-4">
-      @for (s of stats; track s.label) {
-        <div
-          class="relative overflow-hidden rounded-xl p-3 text-white ring-1 ring-inset ring-white/10 shadow-[inset_0_1px_0_rgba(255,255,255,0.08),0_18px_40px_-16px_rgba(0,0,0,0.5)] sm:p-4"
-          [class]="s.cardBg"
-        >
-          <div class="relative flex flex-col gap-1.5">
-            <div class="flex items-center justify-between gap-2">
-              <span class="truncate text-xs font-medium text-white/80 sm:text-sm">{{ s.label }}</span>
-              <ui-icon [name]="s.icon" class="shrink-0 text-xl text-white/70 sm:text-2xl" />
-            </div>
-            <div class="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
-              <span class="text-2xl font-extrabold sm:text-3xl">{{ s.value }}</span>
-              <span
-                class="flex items-center gap-0.5 text-[11px] font-semibold sm:text-xs"
-                [class]="s.trend === 'up' ? 'text-emerald-300' : 'text-rose-300'"
-              >
-                <ui-icon
-                  [name]="s.trend === 'up' ? 'trending_up' : 'trending_down'"
-                  class="text-sm"
-                />
-                {{ s.delta }}
-              </span>
-            </div>
+    @for (s of stats; track s.label) {
+      <div
+        class="relative overflow-hidden rounded-xl p-3 text-white ring-1 ring-inset ring-white/10 shadow-[inset_0_1px_0_rgba(255,255,255,0.08),0_18px_40px_-16px_rgba(0,0,0,0.5)] sm:p-4"
+        [class]="s.cardBg"
+      >
+        <div class="relative flex flex-col gap-1.5">
+          <div class="flex items-center justify-between gap-2">
+            <span class="truncate text-xs font-medium text-white/80 sm:text-sm">{{ s.label }}</span>
+            <ui-icon [name]="s.icon" class="shrink-0 text-xl text-white/70 sm:text-2xl" />
+          </div>
+          <div class="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
+            <span class="text-2xl font-extrabold sm:text-3xl">{{ s.value }}</span>
+            <span
+              class="flex items-center gap-0.5 text-[11px] font-semibold sm:text-xs"
+              [class]="s.trend === 'up' ? 'text-emerald-300' : 'text-rose-300'"
+            >
+              <ui-icon
+                [name]="s.trend === 'up' ? 'trending_up' : 'trending_down'"
+                class="text-sm"
+              />
+              {{ s.delta }}
+            </span>
           </div>
         </div>
-      }
-    </section>
-
-    <section class="surface animate-rise flex min-h-0 flex-none flex-col overflow-visible rounded-xl p-3 sm:rounded-2xl sm:p-6 lg:flex-1">
-      <div class="mb-4 flex shrink-0 flex-col gap-3 sm:mb-6 sm:flex-row sm:items-center sm:justify-between">
-        <ui-date-selector [value]="activeDate()" (valueChange)="selectDate($event)" />
-        <ui-segmented
-          [options]="categories"
-          [value]="activeCategory()"
-          (valueChange)="selectCategory($any($event))"
-        />
       </div>
+    }
+  </section>
 
+  <section
+    class="surface animate-rise flex min-h-0 flex-none flex-col overflow-visible rounded-xl p-3 sm:rounded-2xl sm:p-6 lg:flex-1"
+  >
+    <div
+      class="mb-4 flex shrink-0 flex-col gap-3 sm:mb-6 sm:flex-row sm:items-center sm:justify-between"
+    >
+      <ui-date-selector [value]="activeDate()" (valueChange)="selectDate($event)" />
+      <ui-segmented
+        [options]="categories"
+        [value]="activeCategory()"
+        (valueChange)="selectCategory($any($event))"
+      />
+    </div>
+
+    <div
+      class="grid min-h-[34rem] flex-1 grid-rows-[minmax(24rem,auto)_minmax(9rem,auto)] gap-3 md:min-h-[36rem] lg:min-h-0 lg:grid-cols-[minmax(0,1fr)_22rem] lg:grid-rows-none"
+    >
+      <div
+        class="flex min-h-0 overflow-auto rounded-lg ring-1 ring-inset ring-black/5 dark:ring-white/10"
+      >
+        <div class="min-h-0 flex-1 overflow-x-auto">
+          <div class="grid h-full min-w-full grid-rows-[auto_minmax(0,1fr)] md:min-w-[44rem]">
+            <div class="grid grid-cols-7 bg-primary text-center text-sm font-bold text-white">
+              @for (weekday of weekdays; track weekday) {
+                <div class="border-r border-white/35 px-1 py-2 last:border-r-0 sm:px-2">
+                  {{ weekday }}
+                </div>
+              }
+            </div>
+
+            <div
+              class="grid grid-cols-7 text-center text-[11px] text-gray-900 dark:text-zinc-100 sm:text-xs"
+              [style.grid-template-rows]="calendarDateRows()"
+            >
+              @for (day of calendarDays(); track day.id) {
+                <div
+                  class="flex min-h-0 flex-col border-r border-b border-white p-1.5 last:border-r-0 dark:border-zinc-700/60 sm:p-2"
+                  [class.bg-gray-100]="day.rowTone === 'muted'"
+                  [class.dark:bg-zinc-800]="day.rowTone === 'muted'"
+                  [class.bg-gray-50]="day.rowTone === 'soft'"
+                  [class.dark:bg-zinc-800/50]="day.rowTone === 'soft'"
+                >
+                  @if (day.day !== null) {
+                    <span
+                      class="mx-auto flex h-5 min-w-5 shrink-0 items-center justify-center rounded-full px-1 font-semibold sm:h-6 sm:min-w-6"
+                      [class.bg-primary]="day.isToday"
+                      [class.text-white]="day.isToday"
+                      [class.shadow-sm]="day.isToday"
+                      [attr.aria-label]="day.isToday ? 'Today' : null"
+                    >
+                      {{ day.day }}
+                    </span>
+                    @if (day.reservations.length) {
+                      <ul class="mt-2 flex-1 space-y-1 overflow-hidden text-left">
+                        @for (
+                          reservation of day.reservations | slice: 0 : 3;
+                          track reservation.id
+                        ) {
+                          <li
+                            class="min-w-0 cursor-pointer rounded border-l-2 border-primary/50 bg-white/70 px-1.5 py-1 text-[11px] leading-tight text-gray-700 shadow-sm hover:bg-white dark:bg-zinc-900/70 dark:text-zinc-200 dark:hover:bg-zinc-900"
+                            [title]="reservation.time + ' - ' + reservation.title"
+                          >
+                            <span class="block truncate font-bold text-primary">
+                              {{ reservation.time }}
+                            </span>
+                            <span class="block truncate font-medium">
+                              {{ reservation.title }}
+                            </span>
+                          </li>
+                        }
+                      </ul>
+                      @if (day.reservations.length > 3) {
+                        <button
+                          class="mt-1 w-full shrink-0 text-left text-[11px] font-bold text-primary hover:underline dark:text-primary-400 cursor-pointer"
+                          (click)="openDayModal(day)"
+                        >
+                          +{{ day.reservations.length - 3 }} more
+                        </button>
       <div class="mb-4 flex flex-wrap items-center gap-2 text-[11px] font-bold sm:text-xs">
         @for (legend of eventLegends; track legend.label) {
           <span
@@ -102,25 +170,36 @@
                         </ul>
                       }
                     }
-                  </div>
-                }
-              </div>
+                  }
+                </div>
+              }
             </div>
           </div>
         </div>
+      </div>
 
-        <aside class="flex min-h-0 max-h-44 flex-col overflow-hidden rounded-lg ring-1 ring-inset ring-black/5 lg:max-h-none">
-          <div class="shrink-0 bg-primary px-4 py-2 text-center text-sm font-bold text-white">
-            Upcoming Events
-          </div>
-          <div class="min-h-0 flex-1 overflow-y-auto p-3">
-            @for (event of upcomingEvents(); track event.id) {
-              <article class="border-b border-gray-100 pb-3 last:border-b-0 last:pb-0 dark:border-zinc-800">
+      <aside
+        class="flex min-h-0 max-h-44 flex-col overflow-hidden rounded-lg ring-1 ring-inset ring-black/5 lg:max-h-none"
+      >
+        <div class="shrink-0 bg-primary px-4 py-2 text-center text-sm font-bold text-white">
+          Upcoming Events
+        </div>
+        <div class="min-h-0 flex-1 overflow-y-auto p-3">
+          @for (event of upcomingEvents(); track event.id) {
+            <article
+              class="flex items-start gap-3 border-b border-gray-100 pb-3 last:border-b-0 last:pb-0 dark:border-zinc-800"
+            >
+              <div class="flex h-11 w-11 shrink-0 flex-col items-center justify-center rounded-full bg-primary text-white shadow-sm">
+                <span class="text-[10px] font-medium leading-tight">{{ event.date | date:'MMM' }}</span>
+                <span class="text-lg font-bold leading-none">{{ event.date | date:'d' }}</span>
+              </div>
+              <div class="min-w-0 flex-1">
                 <div class="flex items-start justify-between gap-2">
                   <h3 class="min-w-0 truncate text-xs font-semibold text-gray-900 dark:text-zinc-100">
                     {{ event.title }}
                   </h3>
                   <span
+                    class="shrink-0 rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-bold text-primary"
                     class="shrink-0 rounded-full px-2 py-0.5 text-[10px] font-bold"
                     [class]="eventBadgeClass(event.category)"
                   >
@@ -131,18 +210,66 @@
                   {{ event.date }} - {{ event.time }}
                 </time>
                 @if (event.description) {
-                  <p class="mt-1 line-clamp-2 text-[11px] leading-snug text-gray-500">
+                  <p class="mt-1 text-[11px] leading-snug text-gray-500">
                     {{ event.description }}
                   </p>
                 }
-              </article>
-            } @empty {
-              <p class="text-center text-xs font-medium text-gray-500 dark:text-zinc-400">
-                No events this month
-              </p>
+              </div>
+            </article>
+          } @empty {
+            <p class="text-center text-xs font-medium text-gray-500 dark:text-zinc-400">
+              No events this month
+            </p>
+          }
+        </div>
+      </aside>
+    </div>
+  </section>
+
+  @if (selectedDayForModal(); as selectedDay) {
+    <div
+      class="fixed inset-0 z-50 flex cursor-pointer items-center justify-center bg-black/50 p-4 backdrop-blur-sm"
+      (click)="closeDayModal()"
+    >
+      <div
+        class="animate-rise flex max-h-full w-full max-w-sm cursor-default flex-col rounded-2xl bg-white shadow-2xl dark:bg-zinc-900"
+        (click)="$event.stopPropagation()"
+      >
+        <div
+          class="flex shrink-0 items-center justify-between border-b border-gray-100 p-4 dark:border-zinc-800"
+        >
+          <h3 class="text-lg font-bold text-gray-900 dark:text-zinc-100">
+            Reservations for Day {{ selectedDay.day }}
+          </h3>
+          <button
+            class="flex shrink-0 cursor-pointer items-center justify-center rounded-full p-1 text-gray-500 hover:bg-gray-100 hover:text-gray-900 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-zinc-100"
+            (click)="closeDayModal()"
+          >
+            <ui-icon name="close" class="text-xl" />
+          </button>
+        </div>
+        <div class="min-h-0 flex-1 overflow-y-auto p-4 text-left">
+          <ul class="space-y-2">
+            @for (reservation of selectedDay.reservations; track reservation.id) {
+              <li
+                class="rounded-lg border border-gray-100 p-3 shadow-sm dark:border-zinc-800 dark:bg-zinc-800/50"
+              >
+                <div class="flex items-start justify-between gap-2">
+                  <span class="block font-bold text-primary">{{ reservation.time }}</span>
+                  <span
+                    class="shrink-0 rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-bold text-primary"
+                  >
+                    {{ reservation.category }}
+                  </span>
+                </div>
+                <span class="mt-1 block text-sm font-medium text-gray-900 dark:text-zinc-100">
+                  {{ reservation.title }}
+                </span>
+              </li>
             }
-          </div>
-        </aside>
+          </ul>
+        </div>
       </div>
-    </section>
+    </div>
+  }
 </app-admin-shell>

@@ -9,3 +9,4 @@ export { UiSegmented } from './segmented/segmented';
 export { UiDateSelector } from './date-selector/date-selector';
 export { UiStatusBadge } from './status-badge/status-badge';
 export { UiToast } from './toast/toast';
+export { UiCalendar } from './calendar/calendar';

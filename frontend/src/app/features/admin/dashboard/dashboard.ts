@@ -1,4 +1,5 @@
 import { ChangeDetectionStrategy, Component, computed, signal } from '@angular/core';
+import { SlicePipe, DatePipe } from '@angular/common';
 
 import { AdminShell } from '../../../shared/layout/admin-shell/admin-shell';
 import { UiIcon, UiSegmented, UiDateSelector } from '../../../shared/ui';
@@ -118,6 +119,14 @@ const HARDCODED_EVENTS: UpcomingEvent[] = [
     description: 'Projector, microphones, and display check',
   },
   {
+    id: 'e6-b',
+    title: 'Team Debrief',
+    date: '2026-06-25',
+    time: '5:30 PM',
+    category: 'Boardroom',
+    description: 'Post-visit meeting',
+  },
+  {
     id: 'e7',
     title: 'Nexus Lab Booking',
     date: '2026-07-02',
@@ -180,7 +189,7 @@ function createCalendarDays(value: string, events: UpcomingEvent[]): CalendarDay
 
 @Component({
   selector: 'app-dashboard',
-  imports: [AdminShell, UiIcon, UiSegmented, UiDateSelector],
+  imports: [AdminShell, UiIcon, UiSegmented, UiDateSelector, SlicePipe, DatePipe],
   templateUrl: './dashboard.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -263,10 +272,20 @@ export class Dashboard {
     createCalendarDays(this.activeDate(), this.filteredEvents()),
   );
   protected readonly calendarDateRows = computed(
-    () => `repeat(${this.calendarDays().length / DAYS_PER_WEEK}, minmax(7.5rem, auto))`,
+    () => `repeat(${this.calendarDays().length / DAYS_PER_WEEK}, minmax(min-content, 1fr))`,
   );
 
   protected readonly upcomingEvents = computed(() =>
     this.filteredEvents().filter((event) => event.date.startsWith(this.activeDate())),
   );
+
+  protected readonly selectedDayForModal = signal<CalendarDay | null>(null);
+
+  protected openDayModal(day: CalendarDay): void {
+    this.selectedDayForModal.set(day);
+  }
+
+  protected closeDayModal(): void {
+    this.selectedDayForModal.set(null);
+  }
 }
