@@ -4,14 +4,14 @@ import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { forkJoin } from 'rxjs';
 
 import { AdminShell } from '../../../shared/layout/admin-shell/admin-shell';
-import { UiButton, UiIcon, UiInput, UiSelect, UiSelectOption } from '../../../shared/ui';
+import { UiButton, UiFormFeedback, UiIcon, UiInput, UiSelect, UiSelectOption } from '../../../shared/ui';
 import { toFacilityOptions } from './equipment-facilities';
 import { EQUIPMENT_STATUS_OPTIONS } from './equipment-status';
 import { EquipmentsService } from './equipments.service';
 
 @Component({
   selector: 'app-edit-equipment',
-  imports: [ReactiveFormsModule, RouterLink, AdminShell, UiButton, UiIcon, UiInput, UiSelect],
+  imports: [ReactiveFormsModule, RouterLink, AdminShell, UiButton, UiFormFeedback, UiIcon, UiInput, UiSelect],
   templateUrl: './edit-equipment.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })

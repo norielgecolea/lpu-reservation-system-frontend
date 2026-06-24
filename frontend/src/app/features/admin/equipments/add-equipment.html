@@ -12,19 +12,12 @@
       </div>
     </div>
 
-    @if (saving()) {
-      <div
-        class="mx-5 mt-4 rounded-lg border border-primary/20 bg-primary/5 px-4 py-3 text-sm font-semibold text-primary sm:mx-7"
-      >
-        Saving equipment...
-      </div>
-    } @else if (error()) {
-      <div
-        class="mx-5 mt-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-700 sm:mx-7"
-      >
-        {{ error() }}
-      </div>
-    }
+    <ui-form-feedback
+      [saving]="saving()"
+      savingText="Saving equipment..."
+      [error]="error()"
+      (dismissed)="error.set(null)"
+    />
 
     <div class="flex-1 overflow-y-auto p-5 lg:p-7">
       <div class="grid content-start gap-5 sm:grid-cols-2">

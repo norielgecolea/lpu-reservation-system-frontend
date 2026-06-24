@@ -3,14 +3,14 @@ import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 
 import { AdminShell } from '../../../shared/layout/admin-shell/admin-shell';
-import { UiButton, UiIcon, UiInput, UiSelect, UiSelectOption } from '../../../shared/ui';
+import { UiButton, UiFormFeedback, UiIcon, UiInput, UiSelect, UiSelectOption } from '../../../shared/ui';
 import { toFacilityOptions } from './equipment-facilities';
 import { EQUIPMENT_STATUS_OPTIONS } from './equipment-status';
 import { EquipmentsService } from './equipments.service';
 
 @Component({
   selector: 'app-add-equipment',
-  imports: [ReactiveFormsModule, RouterLink, AdminShell, UiButton, UiIcon, UiInput, UiSelect],
+  imports: [ReactiveFormsModule, RouterLink, AdminShell, UiButton, UiFormFeedback, UiIcon, UiInput, UiSelect],
   templateUrl: './add-equipment.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })

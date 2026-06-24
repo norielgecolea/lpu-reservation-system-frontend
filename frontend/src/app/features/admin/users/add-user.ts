@@ -9,7 +9,7 @@ import {
 import { Router, RouterLink } from '@angular/router';
 
 import { AdminShell } from '../../../shared/layout/admin-shell/admin-shell';
-import { UiButton, UiIcon, UiInput, UiSelect } from '../../../shared/ui';
+import { UiButton, UiFormFeedback, UiIcon, UiInput, UiSelect } from '../../../shared/ui';
 import { USER_ROLE_OPTIONS } from './user-roles';
 import { UsersService } from './users.service';
 
@@ -21,7 +21,7 @@ function passwordsMatch(group: AbstractControl): ValidationErrors | null {
 
 @Component({
   selector: 'app-add-user',
-  imports: [ReactiveFormsModule, RouterLink, AdminShell, UiButton, UiIcon, UiInput, UiSelect],
+  imports: [ReactiveFormsModule, RouterLink, AdminShell, UiButton, UiFormFeedback, UiIcon, UiInput, UiSelect],
   templateUrl: './add-user.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -52,9 +52,11 @@ export class AddUser {
   protected save(): void {
     if (this.form.invalid) {
       this.form.markAllAsTouched();
-      if (this.form.errors?.['mismatch']) {
-        this.error.set('Passwords do not match');
-      }
+      this.error.set(
+        this.form.errors?.['mismatch']
+          ? 'Passwords do not match'
+          : 'Please complete all required fields',
+      );
       return;
     }
 
