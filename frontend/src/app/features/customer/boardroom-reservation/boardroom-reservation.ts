@@ -16,9 +16,8 @@ import { UiButton, UiInput, UiLabel, UiCalendar } from '../../../shared/ui';
       <!-- Left Panel: Branding & Calendar -->
       <div class="w-full md:w-1/3 glass-brand p-8 text-white flex flex-col relative shrink-0">
         <div class="flex items-center gap-3 mb-8 opacity-90">
-          <div class="w-10 h-10 border-2 border-white/80 rounded-full flex items-center justify-center">
-            <span class="material-symbols-outlined text-xl">school</span>
-          </div>
+          <img src="/logo.svg"class="w-15 h-15 flex items-center justify-center"/>
+          
           <span class="font-semibold tracking-wide text-sm">LPU LAGUNA RESERVATION SYSTEM</span>
         </div>
 

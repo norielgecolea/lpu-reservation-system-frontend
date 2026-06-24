@@ -18,9 +18,8 @@ import { UiIcon } from '../../../shared/ui';
       <!-- Header / Logo Area -->
       <div class="text-center mb-8 shrink-0">
         <!-- Mock Logo, since we don't have the actual logo asset -->
-        <div class="w-24 h-24 mx-auto mb-4 bg-primary text-white rounded-full flex items-center justify-center shadow-lg border-4 border-white">
-          <ui-icon name="school" class="text-5xl" />
-        </div>
+         <img src="/logo.svg" alt="LPU Laguna" class="w-50 h-50 mx-auto mb-4  text-white  flex items-center justify-center " />
+       
         <h1 class="text-3xl md:text-4xl font-black tracking-tight text-gray-900 drop-shadow-sm">LYCEUM OF THE PHILIPPINES UNIVERSITY - LAGUNA</h1>
         <h2 class="text-xl md:text-2xl font-light tracking-widest text-gray-700 mt-2">RESERVATION SYSTEM</h2>
       </div>
