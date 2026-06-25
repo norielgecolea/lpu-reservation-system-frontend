@@ -4,6 +4,7 @@ import {
   effect,
   input,
   output,
+  signal,
   untracked,
   viewChild,
 } from '@angular/core';
@@ -33,7 +34,7 @@ import { UiIcon } from '../icon/icon';
       </div>
     }
 
-    <brn-alert-dialog (closed)="dismissed.emit()">
+    <brn-alert-dialog (closed)="handleClosed()">
       <brn-alert-dialog-overlay class="bg-black/50" />
       <div
         *brnAlertDialogContent
@@ -47,10 +48,10 @@ import { UiIcon } from '../icon/icon';
           brnAlertDialogDescription
           class="mt-3 text-sm font-semibold text-gray-700 dark:text-zinc-300"
         >
-          {{ error() }}
+          {{ displayedError() }}
         </p>
         <div class="mt-5 flex justify-end">
-          <button uiButton type="button" (click)="dismissed.emit()">OK</button>
+          <button uiButton type="button" (click)="closeDialog()">OK</button>
         </div>
       </div>
     </brn-alert-dialog>
@@ -62,19 +63,34 @@ export class UiFormFeedback {
   readonly error = input<string | null>(null);
   readonly dismissed = output<void>();
 
+  protected readonly displayedError = signal<string | null>(null);
+
   private readonly dialog = viewChild(BrnAlertDialog);
+
+  protected closeDialog(): void {
+    this.dialog()?.close();
+  }
+
+  protected handleClosed(): void {
+    this.dismissed.emit();
+    this.displayedError.set(null);
+  }
 
   constructor() {
     effect(() => {
       const dialog = this.dialog();
-      const hasError = !!this.error();
+      const error = this.error();
+      if (error) {
+        this.displayedError.set(error);
+      }
+
       if (!dialog) {
         return;
       }
 
       // brn's open()/close() spin up their own effects, so run them outside
       // this reactive context to avoid NG0602.
-      untracked(() => (hasError ? dialog.open() : dialog.close()));
+      untracked(() => (error ? dialog.open() : dialog.close()));
     });
   }
 }
