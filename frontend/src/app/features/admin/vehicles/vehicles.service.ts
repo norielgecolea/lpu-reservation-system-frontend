@@ -11,6 +11,7 @@ import {
 } from './vehicles.models';
 
 type UpdateVehicleBody = Omit<UpdateVehicleRequest, 'image'> & { image?: string };
+type CreateVehicleBody = Omit<CreateVehicleRequest, 'image'> & { image?: string };
 type StatementBody = { success?: boolean | string; message?: string } | null;
 
 @Injectable({ providedIn: 'root' })
@@ -24,11 +25,14 @@ export class VehiclesService {
   }
 
   create(payload: CreateVehicleRequest) {
-    return this.http
-      .post<StatementBody>(`${this.base}/admin/createvehicle`, this.toCreateForm(payload), {
-        observe: 'response',
-      })
-      .pipe(map((response) => this.statementResponse(response, 'Vehicle created')));
+    return from(this.toCreateBody(payload)).pipe(
+      switchMap((body) =>
+        this.http.post<StatementBody>(`${this.base}/admin/createvehicle`, body, {
+          observe: 'response',
+        }),
+      ),
+      map((response) => this.statementResponse(response, 'Vehicle created')),
+    );
   }
 
   update(payload: UpdateVehicleRequest) {
@@ -77,24 +81,11 @@ export class VehiclesService {
     return `${assetBase}/${path}`;
   }
 
-  private toCreateForm(payload: CreateVehicleRequest): FormData {
-    const { image, ...fields } = payload;
-    const form = new FormData();
+  private async toCreateBody(payload: CreateVehicleRequest): Promise<CreateVehicleBody> {
+    const { image, ...body } = payload;
+    const encodedImage = await this.imageBodyValue(image);
 
-    form.append('id', String(fields.id));
-    form.append('brand', fields.brand);
-    form.append('plate_num', fields.plate_num);
-    form.append('capacity', String(fields.capacity));
-    form.append('vehicleDescription', fields.vehicleDescription);
-    form.append('status', fields.status);
-
-    if (image instanceof File) {
-      form.append('image', image, image.name);
-    } else if (typeof image === 'string' && image.trim()) {
-      form.append('image', image);
-    }
-
-    return form;
+    return encodedImage ? { ...body, image: encodedImage } : body;
   }
 
   private async toUpdateBody(payload: UpdateVehicleRequest): Promise<UpdateVehicleBody> {
