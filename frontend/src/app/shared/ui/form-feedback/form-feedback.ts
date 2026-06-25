@@ -50,7 +50,7 @@ import { UiIcon } from '../icon/icon';
           {{ error() }}
         </p>
         <div class="mt-5 flex justify-end">
-          <button uiButton type="button" (click)="dismissed.emit()">OK</button>
+          <button uiButton type="button" (click)="closeDialog()">OK</button>
         </div>
       </div>
     </brn-alert-dialog>
@@ -63,6 +63,10 @@ export class UiFormFeedback {
   readonly dismissed = output<void>();
 
   private readonly dialog = viewChild(BrnAlertDialog);
+
+  protected closeDialog(): void {
+    this.dialog()?.close();
+  }
 
   constructor() {
     effect(() => {
