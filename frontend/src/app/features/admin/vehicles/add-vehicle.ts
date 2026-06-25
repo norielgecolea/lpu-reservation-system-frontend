@@ -38,7 +38,7 @@ export class AddVehicle implements OnDestroy {
     brand: ['', [Validators.required]],
     plate_num: ['', [Validators.required]],
     capacity: [1, [Validators.required, Validators.min(1)]],
-    status: ['active', [Validators.required]],
+    status: ['available', [Validators.required]],
     vehicleDescription: ['', [Validators.required]],
     image: [null as File | null],
   });

@@ -146,7 +146,7 @@ export class Vehicles {
   }
 
   protected isActive(status: string): boolean {
-    return status?.toUpperCase() === 'ACTIVE';
+    return status?.toUpperCase() === 'AVAILABLE';
   }
 
   protected toggleStatus(vehicle: VehicleRow): void {
@@ -166,7 +166,7 @@ export class Vehicles {
               row.id === vehicle.id
                 ? {
                     ...row,
-                    status: this.isActive(row.status) ? 'inactive' : 'active',
+                    status: this.isActive(row.status) ? 'UNAVAILABLE' : 'AVAILABLE',
                   }
                 : row,
             ),
