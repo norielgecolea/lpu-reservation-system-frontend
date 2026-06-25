@@ -2,15 +2,32 @@ import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@a
 import { RouterLink } from '@angular/router';
 
 import { AdminShell } from '../../../shared/layout/admin-shell/admin-shell';
-import { UiButton, UiIcon, UiInputSearch, UiStatusBadge, UiToast } from '../../../shared/ui';
+import {
+  UiButton,
+  UiIcon,
+  UiInputSearch,
+  UiSegmented,
+  UiStatusBadge,
+  UiToast,
+} from '../../../shared/ui';
 import { PopulateVehiclesResponse, VehicleRow } from './vehicles.models';
 import { VehiclesService } from './vehicles.service';
 
 type SortField = 'plate_num' | 'brand' | 'facilityName' | 'capacity' | 'status';
+type ViewMode = 'Grid' | 'Table';
 
 @Component({
   selector: 'app-vehicles',
-  imports: [RouterLink, AdminShell, UiButton, UiIcon, UiInputSearch, UiStatusBadge, UiToast],
+  imports: [
+    RouterLink,
+    AdminShell,
+    UiButton,
+    UiIcon,
+    UiInputSearch,
+    UiSegmented,
+    UiStatusBadge,
+    UiToast,
+  ],
   templateUrl: './vehicles.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -24,6 +41,8 @@ export class Vehicles {
   protected readonly showToast = signal(false);
   protected readonly toastMessage = signal('');
   protected readonly toastSuccess = signal(false);
+  protected readonly viewModes: ViewMode[] = ['Grid', 'Table'];
+  protected readonly viewMode = signal<ViewMode>('Grid');
   protected readonly sortField = signal<SortField>('plate_num');
   protected readonly sortDirection = signal<'asc' | 'desc'>('asc');
   protected readonly selectedImage = signal<{ url: string; label: string } | null>(null);
@@ -88,6 +107,10 @@ export class Vehicles {
 
   protected onSearch(value: string): void {
     this.search.set(value);
+  }
+
+  protected selectViewMode(mode: ViewMode): void {
+    this.viewMode.set(mode);
   }
 
   protected sortBy(field: SortField): void {
