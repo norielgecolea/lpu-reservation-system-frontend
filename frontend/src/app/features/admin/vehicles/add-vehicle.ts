@@ -31,6 +31,7 @@ export class AddVehicle {
   protected readonly statuses = VEHICLE_STATUS_OPTIONS;
   protected readonly saving = signal(false);
   protected readonly error = signal<string | null>(null);
+  protected readonly imagePreview = signal<string | null>(null);
 
   protected readonly form = this.fb.nonNullable.group({
     brand: ['', [Validators.required]],
@@ -38,7 +39,14 @@ export class AddVehicle {
     capacity: [1, [Validators.required, Validators.min(1)]],
     status: ['active', [Validators.required]],
     vehicleDescription: ['', [Validators.required]],
+    image: [null as File | null],
   });
+
+  protected onImageSelected(event: Event): void {
+    const file = (event.target as HTMLInputElement).files?.[0] ?? null;
+    this.form.controls.image.setValue(file);
+    this.imagePreview.set(file ? URL.createObjectURL(file) : null);
+  }
 
   protected save(): void {
     if (this.form.invalid) {
@@ -59,6 +67,7 @@ export class AddVehicle {
         vehicleDescription: v.vehicleDescription,
         status: v.status,
         id: VAN_FACILITY_ID,
+        image: v.image,
       })
       .subscribe({
         next: (res) => {

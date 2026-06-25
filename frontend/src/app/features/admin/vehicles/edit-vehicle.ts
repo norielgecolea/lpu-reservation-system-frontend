@@ -36,6 +36,7 @@ export class EditVehicle {
   protected readonly id = signal(0);
   protected readonly facilityId = signal(VAN_FACILITY_ID);
   protected readonly currentStatus = signal<string | null>(null);
+  protected readonly imagePreview = signal<string | null>(null);
 
   protected readonly statuses = computed(() => {
     const current = this.currentStatus();
@@ -53,7 +54,14 @@ export class EditVehicle {
     capacity: [1, [Validators.required, Validators.min(1)]],
     status: ['active', [Validators.required]],
     vehicleDescription: ['', [Validators.required]],
+    image: [null as File | null],
   });
+
+  protected onImageSelected(event: Event): void {
+    const file = (event.target as HTMLInputElement).files?.[0] ?? null;
+    this.form.controls.image.setValue(file);
+    this.imagePreview.set(file ? URL.createObjectURL(file) : null);
+  }
 
   constructor() {
     const id = Number(this.route.snapshot.paramMap.get('id'));
@@ -98,7 +106,9 @@ export class EditVehicle {
           capacity: Number(vehicle.capacity ?? 1),
           status: normalizeVehicleStatus(vehicle.status),
           vehicleDescription: vehicle.vehicleDescription ?? '',
+          image: null,
         });
+        this.imagePreview.set(vehicle.image ?? null);
         this.ready.set(true);
       },
       error: (err) => {
@@ -133,6 +143,7 @@ export class EditVehicle {
         capacity: Number(v.capacity),
         vehicleDescription: v.vehicleDescription,
         status: v.status,
+        image: v.image,
       })
       .subscribe({
         next: (res) => {

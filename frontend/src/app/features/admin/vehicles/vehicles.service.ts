@@ -19,11 +19,35 @@ export class VehiclesService {
   }
 
   create(payload: CreateVehicleRequest) {
-    return this.http.post<VehicleStatementResponse>(`${this.base}/admin/createvehicle`, payload);
+    return this.http.post<VehicleStatementResponse>(
+      `${this.base}/admin/createvehicle`,
+      this.toFormData(payload),
+    );
   }
 
   update(payload: UpdateVehicleRequest) {
-    return this.http.put<VehicleStatementResponse>(`${this.base}/admin/updatevehicle`, payload);
+    return this.http.put<VehicleStatementResponse>(
+      `${this.base}/admin/updatevehicle`,
+      this.toFormData(payload),
+    );
+  }
+
+  private toFormData(payload: CreateVehicleRequest | UpdateVehicleRequest): FormData {
+    const data = new FormData();
+
+    for (const [key, value] of Object.entries(payload)) {
+      if (value === null || value === undefined) {
+        continue;
+      }
+
+      if (value instanceof File) {
+        data.append(key, value);
+      } else {
+        data.append(key, String(value));
+      }
+    }
+
+    return data;
   }
 
   remove(id: number) {
