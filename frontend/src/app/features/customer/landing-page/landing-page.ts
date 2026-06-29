@@ -1,10 +1,10 @@
 import { ChangeDetectionStrategy, Component } from '@angular/core';
 import { RouterLink } from '@angular/router';
-import { UiIcon } from '../../../shared/ui';
+import { UiIcon, UiButton } from '../../../shared/ui';
 
 @Component({
   selector: 'app-landing-page',
-  imports: [RouterLink, UiIcon],
+  imports: [RouterLink, UiIcon, UiButton],
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: {
     class: 'block min-h-screen relative overflow-hidden',
@@ -16,7 +16,10 @@ import { UiIcon } from '../../../shared/ui';
 
     <div class="relative z-10 flex flex-col items-center justify-between min-h-screen p-4 gap-4 md:gap-8">
       <!-- Header / Logo Area -->
-      <div class="text-center shrink-0 flex flex-col items-center gap-4">
+      <div class="text-center shrink-0 flex flex-col items-center gap-4 relative w-full max-w-7xl mx-auto">
+        <div class="absolute right-4 top-0 sm:right-8">
+          <a routerLink="/auth/login" uiButton variant="link">Back to Login</a>
+        </div>
         <img src="/logo.svg" alt="LPU Logo" class="w-20 h-20 md:w-32 md:h-32 object-contain drop-shadow-xl" />
         <div class="flex flex-col gap-2">
           <h1 class="text-xl sm:text-3xl md:text-4xl font-black tracking-tight text-gray-900 drop-shadow-sm">LYCEUM OF THE PHILIPPINES UNIVERSITY - LAGUNA</h1>

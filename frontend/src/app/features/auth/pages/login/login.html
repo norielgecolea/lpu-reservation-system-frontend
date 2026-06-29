@@ -139,6 +139,10 @@
         <button uiButton type="submit" class="w-full py-3" [disabled]="loading()">
           {{ loading() ? 'Signing in...' : 'Login' }}
         </button>
+
+        <div class="text-center">
+          <a routerLink="/customer" uiButton variant="link" class="w-full">Make a Reservation</a>
+        </div>
       </form>
     </div>
   </div>

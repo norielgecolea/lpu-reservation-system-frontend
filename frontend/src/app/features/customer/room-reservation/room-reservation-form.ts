@@ -137,7 +137,7 @@ const DEFAULT_FEATURES: RoomReservationFeature[] = [
           >
             <button
               uiButton
-              variant="ghost"
+              variant="secondary"
               type="button"
               class="flex-1 bg-white/50 dark:bg-zinc-800/50 md:bg-transparent"
               routerLink="/customer"
