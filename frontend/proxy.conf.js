@@ -18,7 +18,9 @@ function loadEnv(file) {
 // process.env wins so run.cmd's exported BACKEND_URL still overrides.
 const env = { ...loadEnv(path.resolve(__dirname, '.env')), ...process.env };
 const portSuffix = env.BACKEND_PORT ? `:${env.BACKEND_PORT}` : '';
-const target = env.BACKEND_URL || `http://${env.BACKEND_IP || 'localhost'}${portSuffix}`;
+const backendHost = (env.BACKEND_IP || 'localhost').trim();
+const normalizedBackendHost = backendHost === 'localhost' ? '127.0.0.1' : backendHost;
+const target = env.BACKEND_URL || `http://${normalizedBackendHost}${portSuffix}`;
 
 // Backend's Tomcat context path; forwarded as-is (no rewrite).
 const context = env.API_CONTEXT || '/lpu-reservation-system';

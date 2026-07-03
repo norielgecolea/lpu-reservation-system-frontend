@@ -1,6 +1,6 @@
 import { HttpClient, HttpResponse } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
-import { from, map, switchMap } from 'rxjs';
+import { catchError, from, map, switchMap, throwError } from 'rxjs';
 
 import { environment } from '../../../../environments/environment';
 import {
@@ -31,6 +31,7 @@ export class VehiclesService {
         }),
       ),
       map((response) => this.statementResponse(response, 'Vehicle created')),
+      catchError((err) => throwError(() => this.normalizeRequestError(err))),
     );
   }
 
@@ -42,6 +43,7 @@ export class VehiclesService {
         }),
       ),
       map((response) => this.statementResponse(response, 'Vehicle updated')),
+      catchError((err) => throwError(() => this.normalizeRequestError(err))),
     );
   }
 
@@ -49,6 +51,10 @@ export class VehiclesService {
     const source = value?.trim();
 
     if (!source) {
+      return null;
+    }
+
+    if (/^\/?uploads\/vehicles\/default\.webp$/i.test(source)) {
       return null;
     }
 
@@ -161,6 +167,21 @@ export class VehiclesService {
     }
 
     return 'image/jpeg';
+  }
+
+  private normalizeRequestError(err: any): any {
+    const error = err?.error;
+
+    if (typeof error === 'string' && error.trim()) {
+      return {
+        ...err,
+        error: {
+          message: error,
+        },
+      };
+    }
+
+    return err;
   }
 
   remove(id: number) {

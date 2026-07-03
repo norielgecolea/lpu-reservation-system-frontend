@@ -6,6 +6,14 @@ export const CUSTOMER_ROUTES: Routes = [
     loadComponent: () => import('./landing-page/landing-page').then((m) => m.LandingPage),
   },
   {
+    path: 'flt',
+    loadComponent: () => import('./flt/flt-reservation').then((m) => m.FltReservation),
+  },
+  {
+    path: 'flt/terms',
+    loadComponent: () => import('./flt/flt-terms').then((m) => m.FltTerms),
+  },
+  {
     path: 'boardroom',
     loadComponent: () =>
       import('./boardroom/boardroom').then((m) => m.BoardroomReservation),

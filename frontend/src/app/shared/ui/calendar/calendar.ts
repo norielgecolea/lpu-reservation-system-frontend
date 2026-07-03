@@ -11,8 +11,8 @@ import { BrnButtonImports } from '@spartan-ng/brain/button';
   },
   template: `
     <div class="flex flex-col gap-4">
-      <div class="flex items-center justify-between">
-        <div class="flex items-center gap-1 bg-black/20 p-1 rounded-lg">
+        <div class="flex items-center justify-between" [class.hidden]="mode() === 'multi'">
+          <div class="flex items-center gap-1 bg-black/20 p-1 rounded-lg">
           <button 
             type="button"
             class="px-3 py-1.5 text-xs font-semibold rounded-md transition-all duration-200 outline-none focus-visible:ring-2 focus-visible:ring-white/50 cursor-pointer"
@@ -40,20 +40,20 @@ import { BrnButtonImports } from '@spartan-ng/brain/button';
         </div>
       </div>
 
-      <div class="flex items-center justify-between">
-        <h3 class="text-lg font-bold tracking-tight">{{ headerLabel() }}</h3>
-        <div class="flex gap-1.5">
-          @if (selectedStart() !== null || selectedEnd() !== null) {
-            <button
-              brnButton
-              type="button"
-              class="flex h-8 w-8 cursor-pointer items-center justify-center rounded-lg bg-white/5 text-white/90 hover:bg-white/15 hover:text-white transition-colors mr-1"
-              (click)="resetSelection()"
-              title="Reset Selection"
-            >
-              <ui-icon name="refresh" class="text-lg" />
-            </button>
-          }
+        <div class="flex items-center justify-between">
+          <h3 class="text-lg font-bold tracking-tight">{{ headerLabel() }}</h3>
+          <div class="flex gap-1.5">
+            @if (hasAnySelection()) {
+              <button
+                brnButton
+                type="button"
+                class="flex h-8 w-8 cursor-pointer items-center justify-center rounded-lg bg-white/5 text-white/90 hover:bg-white/15 hover:text-white transition-colors mr-1"
+                (click)="resetSelection()"
+                title="Reset Selection"
+              >
+                <ui-icon name="refresh" class="text-lg" />
+              </button>
+            }
           <button
             brnButton
             type="button"
@@ -86,18 +86,18 @@ import { BrnButtonImports } from '@spartan-ng/brain/button';
               class="flex h-9 w-9 mx-auto items-center justify-center rounded-full text-sm transition-all duration-200"
               [class.bg-white]="isOccupied(day)"
               [class.text-primary]="isOccupied(day)"
-              [class.font-bold]="isOccupied(day) || (isMonthSelected(day) && !isOccupied(day))"
+              [class.font-bold]="isOccupied(day) || (mode() === 'range' && isMonthSelected(day) && !isOccupied(day)) || (mode() === 'multi' && isMultiSelected(day) && !isOccupied(day))"
               [class.shadow-md]="isOccupied(day)"
-              [class.bg-yellow-400]="isMonthSelected(day) && !isOccupied(day)"
-              [class.text-zinc-900]="isMonthSelected(day) && !isOccupied(day)"
-              [class.shadow-[0_0_10px_rgba(250,204,21,0.6)]]="isMonthSelected(day) && !isOccupied(day)"
-              [class.bg-yellow-400/30]="isMonthInRange(day) && !isOccupied(day)"
-              [class.text-yellow-100]="isMonthInRange(day) && !isOccupied(day)"
-              [class.hover:bg-white/20]="!isOccupied(day) && !isPastDate(day) && !isMonthSelected(day) && !isMonthInRange(day)"
+              [class.bg-yellow-400]="(mode() === 'range' && isMonthSelected(day) && !isOccupied(day)) || (mode() === 'multi' && isMultiSelected(day) && !isOccupied(day))"
+              [class.text-zinc-900]="(mode() === 'range' && isMonthSelected(day) && !isOccupied(day)) || (mode() === 'multi' && isMultiSelected(day) && !isOccupied(day))"
+              [class.shadow-[0_0_10px_rgba(250,204,21,0.6)]]="(mode() === 'range' && isMonthSelected(day) && !isOccupied(day)) || (mode() === 'multi' && isMultiSelected(day) && !isOccupied(day))"
+              [class.bg-yellow-400/30]="mode() === 'range' && isMonthInRange(day) && !isOccupied(day)"
+              [class.text-yellow-100]="mode() === 'range' && isMonthInRange(day) && !isOccupied(day)"
+              [class.hover:bg-white/20]="!isOccupied(day) && !isPastDate(day) && (mode() === 'range' ? !isMonthSelected(day) && !isMonthInRange(day) : !isMultiSelected(day))"
               [class.cursor-pointer]="!isOccupied(day) && !isPastDate(day)"
               [class.opacity-50]="!isOccupied(day) && isPastDate(day)"
               [attr.title]="isOccupied(day) ? 'Occupied' : 'Available'"
-              (click)="onMonthDayClick(day)"
+              (click)="mode() === 'multi' ? onMultiDayClick(day) : onMonthDayClick(day)"
             >
               {{ day }}
             </div>
@@ -150,10 +150,16 @@ import { BrnButtonImports } from '@spartan-ng/brain/button';
           <div class="w-3 h-3 rounded-full border border-white/30 bg-white/5"></div>
           <span class="text-xs font-medium">Available</span>
         </div>
-        @if (selectedStart() !== null || selectedEnd() !== null) {
+        @if (hasAnySelection()) {
           <div class="flex items-center gap-2">
             <div class="w-3 h-3 rounded-full bg-yellow-400 shadow-[0_0_8px_rgba(250,204,21,0.5)]"></div>
-            <span class="text-xs font-medium text-yellow-400">Selected</span>
+            <span class="text-xs font-medium text-yellow-400">
+              @if (mode() === 'multi') {
+                {{ selectedMultiDates().size }} date(s) selected
+              } @else {
+                Selected
+              }
+            </span>
           </div>
         }
       </div>
@@ -176,24 +182,60 @@ import { BrnButtonImports } from '@spartan-ng/brain/button';
   `]
 })
 export class UiCalendar {
-  readonly occupiedDates = input<string[]>([]); // Array of ISO date strings (e.g. '2026-06-25')
+  readonly occupiedDates = input<string[]>([]);
+  readonly mode = input<'range' | 'multi'>('range');
   readonly selectionChanged = output<{startDate?: string, endDate?: string, startTime?: string, endTime?: string}>();
+  readonly datesChanged = output<string[]>();
 
   protected viewMode = signal<'month' | 'week'>('month');
   protected currentDate = signal(new Date());
 
   protected selectedStart = signal<number | null>(null);
   protected selectedEnd = signal<number | null>(null);
+  protected selectedMultiDates = signal<Set<string>>(new Set());
+
+  protected hasAnySelection = computed(() =>
+    this.mode() === 'multi'
+      ? this.selectedMultiDates().size > 0
+      : this.selectedStart() !== null || this.selectedEnd() !== null
+  );
+
+  protected isMultiSelected(day: number): boolean {
+    const date = this.currentDate();
+    const dateStr = this.formatDate(new Date(date.getFullYear(), date.getMonth(), day));
+    return this.selectedMultiDates().has(dateStr);
+  }
+
+  protected onMultiDayClick(day: number): void {
+    if (this.isOccupied(day) || this.isPastDate(day)) return;
+    const date = this.currentDate();
+    const dateStr = this.formatDate(new Date(date.getFullYear(), date.getMonth(), day));
+    this.selectedMultiDates.update(set => {
+      const next = new Set(set);
+      if (next.has(dateStr)) {
+        next.delete(dateStr);
+      } else {
+        next.add(dateStr);
+      }
+      return next;
+    });
+    this.datesChanged.emit(Array.from(this.selectedMultiDates()));
+  }
 
   protected resetSelection() {
-    this.selectedStart.set(null);
-    this.selectedEnd.set(null);
-    this.selectionChanged.emit({
-      startDate: '',
-      endDate: '',
-      startTime: '',
-      endTime: ''
-    });
+    if (this.mode() === 'multi') {
+      this.selectedMultiDates.set(new Set());
+      this.datesChanged.emit([]);
+    } else {
+      this.selectedStart.set(null);
+      this.selectedEnd.set(null);
+      this.selectionChanged.emit({
+        startDate: '',
+        endDate: '',
+        startTime: '',
+        endTime: ''
+      });
+    }
   }
 
   private getWeekSlotIndex(time: number): number {

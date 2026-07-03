@@ -59,6 +59,12 @@ export const routes: Routes = [
       import('./features/admin/vehicles/edit-vehicle').then((m) => m.EditVehicle),
   },
   {
+    path: 'reservation/flt',
+    canActivate: [authGuard],
+    loadComponent: () =>
+      import('./features/admin/reservations/flt/flt-reservations').then((m) => m.FltReservations),
+  },
+  {
     path: 'customer',
     loadChildren: () =>
       import('./features/customer/customer.routes').then((m) => m.CUSTOMER_ROUTES),
