@@ -1,17 +1,17 @@
-import { ChangeDetectionStrategy, Component, computed, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  OnInit,
+  computed,
+  inject,
+  signal,
+} from '@angular/core';
 import { SlicePipe, DatePipe } from '@angular/common';
 
 import { AdminShell } from '../../../shared/layout/admin-shell/admin-shell';
 import { UiIcon, UiSegmented, UiDateSelector } from '../../../shared/ui';
-
-interface StatCard {
-  label: string;
-  value: string;
-  delta: string;
-  trend: 'up' | 'down';
-  icon: string;
-  cardBg: string;
-}
+import { FltReservationsService } from '../reservations/flt/flt-reservations.service';
+import { FltReservationRecord } from '../reservations/flt/flt-reservations.models';
 
 interface CalendarReservation {
   id: string;
@@ -42,13 +42,20 @@ interface EventLegend {
   className: string;
 }
 
+interface StatCard {
+  label: string;
+  value: number;
+  icon: string;
+  cardBg: string;
+  loading: boolean;
+}
+
 const CATEGORIES = ['All', 'FLT', 'Gym', 'Boardroom', 'Nexus', 'Conference'] as const;
 type Category = (typeof CATEGORIES)[number];
 type EventCategory = Exclude<Category, 'All'>;
 
 const DAYS_PER_WEEK = 7;
 const MIN_CALENDAR_ROWS = 5;
-const DEFAULT_YEAR_MONTH = '2026-06';
 
 const EVENT_COLOR_CLASSES: Record<EventCategory, string> = {
   FLT: 'border-sky-500 bg-sky-50 text-sky-900 dark:border-sky-400 dark:bg-sky-950/70 dark:text-sky-100',
@@ -69,82 +76,53 @@ const EVENT_BADGE_CLASSES: Record<EventCategory, string> = {
   Conference: 'bg-rose-100 text-rose-700 dark:bg-rose-950 dark:text-rose-200',
 };
 
-const HARDCODED_EVENTS: UpcomingEvent[] = [
-  {
-    id: 'e1',
-    title: 'Board Meeting',
-    date: '2026-06-20',
-    time: '10:00 AM',
-    category: 'Boardroom',
-    description: 'Monthly executive board discussion',
-  },
-  {
-    id: 'e2',
-    title: 'Gym Reservation',
-    date: '2026-06-21',
-    time: '3:00 PM',
-    category: 'Gym',
-    description: 'Team fitness session',
-  },
-  {
-    id: 'e3',
-    title: 'FLT Equipment Check',
-    date: '2026-06-22',
-    time: '9:30 AM',
-    category: 'FLT',
-    description: 'Maintenance and inspection',
-  },
-  {
-    id: 'e4',
-    title: 'Conference Setup',
-    date: '2026-06-25',
-    time: '1:00 PM',
-    category: 'Conference',
-    description: 'Prepare room for client meeting',
-  },
-  {
-    id: 'e5',
-    title: 'Client Visit Prep',
-    date: '2026-06-25',
-    time: '2:30 PM',
-    category: 'Boardroom',
-    description: 'Prepare materials and room layout',
-  },
-  {
-    id: 'e6',
-    title: 'AV Equipment Setup',
-    date: '2026-06-25',
-    time: '4:00 PM',
-    category: 'Conference',
-    description: 'Projector, microphones, and display check',
-  },
-  {
-    id: 'e6-b',
-    title: 'Team Debrief',
-    date: '2026-06-25',
-    time: '5:30 PM',
-    category: 'Boardroom',
-    description: 'Post-visit meeting',
-  },
-  {
-    id: 'e7',
-    title: 'Nexus Lab Booking',
-    date: '2026-07-02',
-    time: '2:00 PM',
-    category: 'Nexus',
-    description: 'Workshop preparation',
-  },
-];
+function getCurrentYearMonth(): string {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+}
+
+function parseReservedDates(json: string): Array<{ date: string; startTime: string; endTime: string }> {
+  try { return JSON.parse(json) ?? []; } catch { return []; }
+}
+
+function fltRecordsToEvents(records: FltReservationRecord[]): UpcomingEvent[] {
+  const events: UpcomingEvent[] = [];
+  for (const rec of records) {
+    if (rec.status !== 'APPROVED' && rec.status !== 'COMPLETED') continue;
+    const slots = parseReservedDates(rec.reservedDates);
+    for (let i = 0; i < slots.length; i++) {
+      const s = slots[i];
+      events.push({
+        id:          `flt-${rec.id}-${i}`,
+        title:       rec.organization || rec.eventTitle,
+        date:        s.date,
+        time:        s.startTime,
+        category:    'FLT',
+        description: `${rec.eventTitle} — ${rec.eventType}`,
+      });
+    }
+    // Also show coordination meeting as a separate FLT event
+    if (rec.coordinationDate && rec.coordinationStartTime) {
+      events.push({
+        id:          `flt-coord-${rec.id}`,
+        title:       `[Coord] ${rec.organization || rec.eventTitle}`,
+        date:        rec.coordinationDate,
+        time:        rec.coordinationStartTime,
+        category:    'FLT',
+        description: `Coordination meeting — ${rec.eventTitle}`,
+      });
+    }
+  }
+  return events;
+}
 
 function parseYearMonth(value: string): { year: number; month: number } {
   const match = /^(\d{4})-(\d{2})$/.exec(value);
-  const year = match ? Number(match[1]) : 2026;
-  const month = match ? Number(match[2]) - 1 : 5;
-
+  const year  = match ? Number(match[1]) : new Date().getFullYear();
+  const month = match ? Number(match[2]) - 1 : new Date().getMonth();
   if (!Number.isInteger(year) || month < 0 || month > 11) {
-    return { year: 2026, month: 5 };
+    return { year: new Date().getFullYear(), month: new Date().getMonth() };
   }
-
   return { year, month };
 }
 
@@ -154,20 +132,20 @@ function formatDateKey(year: number, month: number, day: number): string {
 
 function createCalendarDays(value: string, events: UpcomingEvent[]): CalendarDay[] {
   const { year, month } = parseYearMonth(value);
-  const today = new Date();
-  const todayYear = today.getFullYear();
-  const todayMonth = today.getMonth();
-  const todayDay = today.getDate();
+  const today       = new Date();
+  const todayYear   = today.getFullYear();
+  const todayMonth  = today.getMonth();
+  const todayDay    = today.getDate();
   const firstWeekday = new Date(year, month, 1).getDay();
-  const daysInMonth = new Date(year, month + 1, 0).getDate();
-  const rowCount = Math.max(
+  const daysInMonth  = new Date(year, month + 1, 0).getDate();
+  const rowCount     = Math.max(
     MIN_CALENDAR_ROWS,
     Math.ceil((firstWeekday + daysInMonth) / DAYS_PER_WEEK),
   );
   const cellCount = rowCount * DAYS_PER_WEEK;
 
   return Array.from({ length: cellCount }, (_, index) => {
-    const row = Math.floor(index / DAYS_PER_WEEK);
+    const row      = Math.floor(index / DAYS_PER_WEEK);
     const dayOffset = index - firstWeekday;
     const day = dayOffset >= 0 && dayOffset < daysInMonth ? dayOffset + 1 : null;
     const rowTone: CalendarDay['rowTone'] = row % 2 === 0 ? 'muted' : 'soft';
@@ -193,78 +171,78 @@ function createCalendarDays(value: string, events: UpcomingEvent[]): CalendarDay
   templateUrl: './dashboard.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class Dashboard {
-  protected readonly stats: StatCard[] = [
-    {
-      label: 'Total',
-      value: '2,456',
-      delta: '12.5%',
-      trend: 'up',
-      icon: 'monitoring',
-      cardBg: 'bg-linear-to-br from-primary to-secondary',
-    },
-    {
-      label: 'Pending',
-      value: '2,456',
-      delta: '12.5%',
-      trend: 'up',
-      icon: 'pending_actions',
-      cardBg: 'bg-linear-to-br from-amber-800 to-amber-950',
-    },
-    {
-      label: 'Accepted',
-      value: '159',
-      delta: '12.5%',
-      trend: 'down',
-      icon: 'check_circle',
-      cardBg: 'bg-linear-to-br from-emerald-800 to-emerald-950',
-    },
-    {
-      label: 'Rejected',
-      value: '200',
-      delta: '12.5%',
-      trend: 'down',
-      icon: 'cancel',
-      cardBg: 'bg-linear-to-br from-red-800 to-red-950',
-    },
-  ];
+export class Dashboard implements OnInit {
+  private readonly fltSvc = inject(FltReservationsService);
 
-  protected readonly activeDate = signal(DEFAULT_YEAR_MONTH);
+  // ── loading state ──────────────────────────────────────────────────────────
+  protected readonly loading = signal(true);
 
+  // ── raw FLT data ───────────────────────────────────────────────────────────
+  protected readonly fltReservations = signal<FltReservationRecord[]>([]);
+
+  // ── stat cards ─────────────────────────────────────────────────────────────
+  protected readonly fltTotal     = computed(() => this.fltReservations().length);
+  protected readonly fltPending   = computed(() => this.fltReservations().filter(r => r.status === 'PENDING').length);
+  protected readonly fltApproved  = computed(() => this.fltReservations().filter(r => r.status === 'APPROVED' || r.status === 'COMPLETED').length);
+  protected readonly fltRejected  = computed(() => this.fltReservations().filter(r => r.status === 'REJECTED' || r.status === 'CANCELLED').length);
+
+  protected readonly statCards = computed<StatCard[]>(() => [
+    {
+      label:   'Total FLT',
+      value:   this.fltTotal(),
+      icon:    'monitoring',
+      cardBg:  'bg-linear-to-br from-primary to-secondary',
+      loading: this.loading(),
+    },
+    {
+      label:   'Pending',
+      value:   this.fltPending(),
+      icon:    'pending_actions',
+      cardBg:  'bg-linear-to-br from-amber-800 to-amber-950',
+      loading: this.loading(),
+    },
+    {
+      label:   'Approved',
+      value:   this.fltApproved(),
+      icon:    'check_circle',
+      cardBg:  'bg-linear-to-br from-emerald-800 to-emerald-950',
+      loading: this.loading(),
+    },
+    {
+      label:   'Rejected / Cancelled',
+      value:   this.fltRejected(),
+      icon:    'cancel',
+      cardBg:  'bg-linear-to-br from-red-800 to-red-950',
+      loading: this.loading(),
+    },
+  ]);
+
+  // ── calendar & events ──────────────────────────────────────────────────────
+  protected readonly activeDate     = signal(getCurrentYearMonth());
   protected readonly categories: Category[] = [...CATEGORIES];
   protected readonly activeCategory = signal<Category>('All');
-  protected readonly events = signal<UpcomingEvent[]>(HARDCODED_EVENTS);
 
-  protected selectCategory(c: Category): void {
-    this.activeCategory.set(c);
-  }
+  /** Live FLT events derived from approved reservations */
+  protected readonly fltEvents = computed(() => fltRecordsToEvents(this.fltReservations()));
 
-  protected selectDate(value: string): void {
-    this.activeDate.set(value);
-  }
+  protected readonly allEvents = computed<UpcomingEvent[]>(() => this.fltEvents());
 
-  protected eventColorClass(category: EventCategory): string {
-    return EVENT_COLOR_CLASSES[category];
-  }
+  protected selectCategory(c: Category): void  { this.activeCategory.set(c); }
+  protected selectDate(value: string): void     { this.activeDate.set(value); }
 
-  protected eventBadgeClass(category: EventCategory): string {
-    return EVENT_BADGE_CLASSES[category];
-  }
+  protected eventColorClass(category: EventCategory): string { return EVENT_COLOR_CLASSES[category]; }
+  protected eventBadgeClass(category: EventCategory): string { return EVENT_BADGE_CLASSES[category]; }
 
   protected readonly eventLegends: EventLegend[] = CATEGORIES.filter(
-    (category): category is EventCategory => category !== 'All',
-  ).map((category) => ({
-    label: category,
-    className: EVENT_COLOR_CLASSES[category],
-  }));
+    (c): c is EventCategory => c !== 'All',
+  ).map((c) => ({ label: c, className: EVENT_COLOR_CLASSES[c] }));
 
   protected readonly weekdays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
   protected readonly filteredEvents = computed(() => {
-    const category = this.activeCategory();
-
-    return this.events()
-      .filter((event) => category === 'All' || event.category === category)
+    const cat = this.activeCategory();
+    return this.allEvents()
+      .filter((e) => cat === 'All' || e.category === cat)
       .sort((a, b) => `${a.date} ${a.time}`.localeCompare(`${b.date} ${b.time}`));
   });
 
@@ -276,16 +254,22 @@ export class Dashboard {
   );
 
   protected readonly upcomingEvents = computed(() =>
-    this.filteredEvents().filter((event) => event.date.startsWith(this.activeDate())),
+    this.filteredEvents().filter((e) => e.date.startsWith(this.activeDate())),
   );
 
   protected readonly selectedDayForModal = signal<CalendarDay | null>(null);
 
-  protected openDayModal(day: CalendarDay): void {
-    this.selectedDayForModal.set(day);
-  }
+  protected openDayModal(day: CalendarDay): void  { this.selectedDayForModal.set(day); }
+  protected closeDayModal(): void                 { this.selectedDayForModal.set(null); }
 
-  protected closeDayModal(): void {
-    this.selectedDayForModal.set(null);
+  // ── lifecycle ──────────────────────────────────────────────────────────────
+  ngOnInit(): void {
+    this.fltSvc.getAll().subscribe({
+      next: (res) => {
+        this.fltReservations.set(res.reservations ?? []);
+        this.loading.set(false);
+      },
+      error: () => this.loading.set(false),
+    });
   }
 }

@@ -1,6 +1,6 @@
 <app-admin-shell>
   <section class="animate-rise grid shrink-0 grid-cols-2 gap-3 sm:gap-4 xl:grid-cols-4">
-    @for (s of stats; track s.label) {
+    @for (s of statCards(); track s.label) {
       <div
         class="relative overflow-hidden rounded-xl p-3 text-white ring-1 ring-inset ring-white/10 shadow-[inset_0_1px_0_rgba(255,255,255,0.08),0_18px_40px_-16px_rgba(0,0,0,0.5)] sm:p-4"
         [class]="s.cardBg"
@@ -10,19 +10,11 @@
             <span class="truncate text-xs font-medium text-white/80 sm:text-sm">{{ s.label }}</span>
             <ui-icon [name]="s.icon" class="shrink-0 text-xl text-white/70 sm:text-2xl" />
           </div>
-          <div class="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
+          @if (s.loading) {
+            <div class="h-9 w-16 animate-pulse rounded-md bg-white/20"></div>
+          } @else {
             <span class="text-2xl font-extrabold sm:text-3xl">{{ s.value }}</span>
-            <span
-              class="flex items-center gap-0.5 text-[11px] font-semibold sm:text-xs"
-              [class]="s.trend === 'up' ? 'text-emerald-300' : 'text-rose-300'"
-            >
-              <ui-icon
-                [name]="s.trend === 'up' ? 'trending_up' : 'trending_down'"
-                class="text-sm"
-              />
-              {{ s.delta }}
-            </span>
-          </div>
+          }
         </div>
       </div>
     }
