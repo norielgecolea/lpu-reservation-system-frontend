@@ -1,6 +1,6 @@
 import { Routes } from '@angular/router';
 
-import { authGuard } from './core/auth/auth.guard';
+import { authGuard, facilitiesGuard } from './core/auth/auth.guard';
 
 export const routes: Routes = [
   {
@@ -64,6 +64,51 @@ export const routes: Routes = [
     loadComponent: () =>
       import('./features/admin/reservations/flt/flt-reservations').then((m) => m.FltReservations),
   },
+  // ── Facilities Admin (/facilities/*) ──────────────────────────────────────
+  {
+    path: 'facilities/dashboard',
+    canActivate: [facilitiesGuard],
+    loadComponent: () =>
+      import('./features/facilities/dashboard/facilities-dashboard').then((m) => m.FacilitiesDashboard),
+  },
+  {
+    path: 'facilities/users',
+    canActivate: [facilitiesGuard],
+    loadComponent: () =>
+      import('./features/facilities/users/facilities-users').then((m) => m.FacilitiesUsers),
+  },
+  {
+    path: 'facilities/users/new',
+    canActivate: [facilitiesGuard],
+    loadComponent: () =>
+      import('./features/facilities/users/facilities-add-user').then((m) => m.FacilitiesAddUser),
+  },
+  {
+    path: 'facilities/users/:id/edit',
+    canActivate: [facilitiesGuard],
+    loadComponent: () =>
+      import('./features/facilities/users/facilities-edit-user').then((m) => m.FacilitiesEditUser),
+  },
+  {
+    path: 'facilities/reservation/flt',
+    canActivate: [facilitiesGuard],
+    loadComponent: () =>
+      import('./features/admin/reservations/flt/flt-reservations').then((m) => m.FltReservations),
+  },
+  {
+    path: 'facilities/reservation/gymnasium',
+    canActivate: [facilitiesGuard],
+    loadComponent: () =>
+      import('./features/facilities/gymnasium/facilities-gym').then((m) => m.FacilitiesGym),
+  },
+  {
+    path: 'facilities/reservation/van',
+    canActivate: [facilitiesGuard],
+    loadComponent: () =>
+      import('./features/facilities/van/facilities-van').then((m) => m.FacilitiesVan),
+  },
+  // ─────────────────────────────────────────────────────────────────────────
+
   {
     path: 'customer',
     loadChildren: () =>

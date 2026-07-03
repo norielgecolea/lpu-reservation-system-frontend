@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, OnInit, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, OnInit, computed, inject, signal } from '@angular/core';
 import { NavigationEnd, Router, RouterLink, RouterLinkActive } from '@angular/router';
 import { filter } from 'rxjs';
 
@@ -31,24 +31,41 @@ export class SideNav implements OnInit {
   private readonly router = inject(Router);
   private readonly themeService = inject(ThemeService);
 
-  protected readonly user = this.auth.user;
+  protected readonly user  = this.auth.user;
   protected readonly isDark = this.themeService.isDark;
 
-  protected toggleTheme(): void {
-    this.themeService.toggle();
-  }
+  protected toggleTheme(): void { this.themeService.toggle(); }
 
-  protected readonly nav: NavItem[] = [
-    { label: 'Dashboard', icon: 'grid_view', link: '/dashboard' },
-    { label: 'Users', icon: 'group', link: '/users' },
-    { label: 'Equipments', icon: 'inventory_2', link: '/equipments' },
-    { label: 'Vehicles', icon: 'directions_car', link: '/vehicles' },
+  private static readonly SUPERADMIN_NAV: NavItem[] = [
+    { label: 'Dashboard',   icon: 'grid_view',       link: '/dashboard' },
+    { label: 'Users',       icon: 'group',           link: '/users' },
+    { label: 'Equipments',  icon: 'inventory_2',     link: '/equipments' },
+    { label: 'Vehicles',    icon: 'directions_car',  link: '/vehicles' },
     {
       label: 'Reservation', icon: 'event_note', children: [
         { label: 'FLT Theater', icon: 'theaters', link: '/reservation/flt' },
       ],
     },
   ];
+
+  private static readonly FACILITIES_NAV: NavItem[] = [
+    { label: 'Dashboard', icon: 'grid_view', link: '/facilities/dashboard' },
+    { label: 'Users',     icon: 'group',     link: '/facilities/users' },
+    {
+      label: 'Scheduling', icon: 'event_note', children: [
+        { label: 'FLT Theater',    icon: 'theaters',          link: '/facilities/reservation/flt' },
+        { label: 'Gymnasium',      icon: 'sports_gymnastics', link: '/facilities/reservation/gymnasium' },
+        { label: 'University Van', icon: 'airport_shuttle',   link: '/facilities/reservation/van' },
+      ],
+    },
+  ];
+
+  protected readonly nav = computed<NavItem[]>(() => {
+    const role = this.user()?.role;
+    return role === 'FACILITIESADMIN'
+      ? SideNav.FACILITIES_NAV
+      : SideNav.SUPERADMIN_NAV;
+  });
 
   protected readonly openGroups = signal<Set<string>>(new Set());
 
@@ -62,7 +79,7 @@ export class SideNav implements OnInit {
   private syncOpenGroups(): void {
     this.openGroups.update(set => {
       const next = new Set(set);
-      for (const item of this.nav) {
+      for (const item of this.nav()) {
         if (item.children && this.isChildActive(item.children)) {
           next.add(item.label);
         }
