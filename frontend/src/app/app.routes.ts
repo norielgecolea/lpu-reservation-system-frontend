@@ -64,6 +64,12 @@ export const routes: Routes = [
     loadComponent: () =>
       import('./features/admin/reservations/flt/flt-reservations').then((m) => m.FltReservations),
   },
+  {
+    path: 'reservation/gymnasium',
+    canActivate: [authGuard],
+    loadComponent: () =>
+      import('./features/admin/reservations/gymnasium/gymnasium-reservations').then((m) => m.GymnasiumReservations),
+  },
   // ── Facilities Admin (/facilities/*) ──────────────────────────────────────
   {
     path: 'facilities/dashboard',
@@ -90,6 +96,24 @@ export const routes: Routes = [
       import('./features/facilities/users/facilities-edit-user').then((m) => m.FacilitiesEditUser),
   },
   {
+    path: 'facilities/equipments',
+    canActivate: [facilitiesGuard],
+    loadComponent: () =>
+      import('./features/admin/equipments/equipments').then((m) => m.Equipments),
+  },
+  {
+    path: 'facilities/equipments/new',
+    canActivate: [facilitiesGuard],
+    loadComponent: () =>
+      import('./features/admin/equipments/add-equipment').then((m) => m.AddEquipment),
+  },
+  {
+    path: 'facilities/equipments/:id/edit',
+    canActivate: [facilitiesGuard],
+    loadComponent: () =>
+      import('./features/admin/equipments/edit-equipment').then((m) => m.EditEquipment),
+  },
+  {
     path: 'facilities/reservation/flt',
     canActivate: [facilitiesGuard],
     loadComponent: () =>
@@ -99,7 +123,7 @@ export const routes: Routes = [
     path: 'facilities/reservation/gymnasium',
     canActivate: [facilitiesGuard],
     loadComponent: () =>
-      import('./features/facilities/gymnasium/facilities-gym').then((m) => m.FacilitiesGym),
+      import('./features/admin/reservations/gymnasium/gymnasium-reservations').then((m) => m.GymnasiumReservations),
   },
   {
     path: 'facilities/reservation/van',

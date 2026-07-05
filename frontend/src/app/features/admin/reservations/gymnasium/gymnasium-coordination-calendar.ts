@@ -8,9 +8,9 @@ import {
   signal,
 } from '@angular/core';
 import { UiIcon } from '../../../../shared/ui';
-import { RescheduleEvent } from './flt-reschedule-calendar';
+import { GymRescheduleEvent } from './gymnasium-reschedule-calendar';
 
-export interface CoordinationSlot {
+export interface GymCoordinationSlot {
   date: string;
   startTime: string;
   endTime: string;
@@ -21,7 +21,7 @@ interface CalendarCell {
   dateStr: string | null;
   isToday: boolean;
   isPast: boolean;
-  events: RescheduleEvent[];
+  events: GymRescheduleEvent[];
 }
 
 const WEEKDAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
@@ -36,13 +36,11 @@ const TIME_SLOTS = Array.from({ length: 15 }, (_, i) => {
 type PickerView = 'calendar' | 'timeslots';
 
 @Component({
-  selector: 'app-flt-coordination-calendar',
+  selector: 'app-gymnasium-coordination-calendar',
   imports: [UiIcon],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <!-- Full-screen overlay -->
     <div class="fixed inset-0 z-50 flex flex-col bg-gray-50 dark:bg-zinc-900">
-
       <!-- Header -->
       <div class="bg-amber-600 bg-[linear-gradient(135deg,#b45309,#92400e_55%,#d97706)] text-white shadow-lg shrink-0">
         <div class="max-w-screen-2xl mx-auto px-4 sm:px-6 py-4 flex flex-col sm:flex-row sm:items-center gap-3">
@@ -80,7 +78,7 @@ type PickerView = 'calendar' | 'timeslots';
         </div>
       </div>
 
-      <!-- ── Calendar view ── -->
+      <!-- Calendar view -->
       @if (pickerView() === 'calendar') {
         <div class="flex-1 flex flex-col max-w-screen-2xl w-full mx-auto px-4 sm:px-6 py-4 gap-3 overflow-auto">
           <div class="flex-1 flex flex-col overflow-hidden rounded-xl ring-1 ring-black/5 dark:ring-white/10 shadow-sm bg-white dark:bg-zinc-900">
@@ -117,8 +115,7 @@ type PickerView = 'calendar' | 'timeslots';
                     @if (cell.events.length > 0) {
                       <ul class="flex flex-col gap-0.5 overflow-hidden">
                         @for (ev of cell.events.slice(0, 3); track ev.department + ev.startTime) {
-                          <li
-                            class="min-w-0 rounded border-l-2 px-1 py-0.5 text-[10px] leading-tight"
+                          <li class="min-w-0 rounded border-l-2 px-1 py-0.5 text-[10px] leading-tight"
                             [class.border-sky-500]="ev.eventKind !== 'COORDINATION'"
                             [class.bg-sky-50]="ev.eventKind !== 'COORDINATION'"
                             [class.dark:bg-sky-950/50]="ev.eventKind !== 'COORDINATION'"
@@ -126,15 +123,13 @@ type PickerView = 'calendar' | 'timeslots';
                             [class.bg-amber-50]="ev.eventKind === 'COORDINATION'"
                             [class.dark:bg-amber-950/50]="ev.eventKind === 'COORDINATION'"
                           >
-                            <span
-                              class="block truncate font-bold"
+                            <span class="block truncate font-bold"
                               [class.text-sky-700]="ev.eventKind !== 'COORDINATION'"
                               [class.dark:text-sky-300]="ev.eventKind !== 'COORDINATION'"
                               [class.text-amber-700]="ev.eventKind === 'COORDINATION'"
                               [class.dark:text-amber-300]="ev.eventKind === 'COORDINATION'"
                             >{{ ev.startTime }}–{{ ev.endTime }}</span>
-                            <span
-                              class="block truncate"
+                            <span class="block truncate"
                               [class.text-sky-900]="ev.eventKind !== 'COORDINATION'"
                               [class.dark:text-sky-200]="ev.eventKind !== 'COORDINATION'"
                               [class.text-amber-900]="ev.eventKind === 'COORDINATION'"
@@ -153,7 +148,6 @@ type PickerView = 'calendar' | 'timeslots';
             </div>
           </div>
 
-          <!-- Legend -->
           <div class="flex flex-wrap items-center gap-4 shrink-0 text-xs text-gray-500 dark:text-zinc-400">
             <span class="flex items-center gap-1.5">
               <span class="inline-block w-3 h-3 rounded border-l-2 border-sky-500 bg-sky-50"></span>
@@ -166,7 +160,6 @@ type PickerView = 'calendar' | 'timeslots';
             <span class="ml-auto text-[11px] italic">Click a date to select the coordination time slot</span>
           </div>
 
-          <!-- Bottom bar: selected slot preview + save -->
           @if (selectedSlot()) {
             <div class="shrink-0 border-t border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 shadow-lg px-4 sm:px-6 py-3">
               <div class="max-w-screen-2xl mx-auto flex flex-col sm:flex-row sm:items-center gap-3">
@@ -179,8 +172,7 @@ type PickerView = 'calendar' | 'timeslots';
                     class="rounded-lg border border-gray-200 dark:border-zinc-700 px-4 py-2 text-sm font-semibold text-gray-600 dark:text-zinc-300 hover:bg-gray-50 dark:hover:bg-zinc-800 cursor-pointer transition-colors">
                     Clear
                   </button>
-                  <button type="button" (click)="save()"
-                    [disabled]="saving()"
+                  <button type="button" (click)="save()" [disabled]="saving()"
                     class="flex items-center gap-1.5 rounded-lg bg-amber-500 hover:bg-amber-600 px-5 py-2 text-sm font-bold text-white cursor-pointer transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
                     @if (saving()) { <ui-icon name="autorenew" class="text-base animate-spin" /> }
                     @else { <ui-icon name="save" class="text-base" /> }
@@ -193,7 +185,7 @@ type PickerView = 'calendar' | 'timeslots';
         </div>
       }
 
-      <!-- ── Time-slot view ── -->
+      <!-- Time-slot view -->
       @if (pickerView() === 'timeslots') {
         <div class="flex-1 min-h-0 overflow-auto max-w-screen-md mx-auto w-full px-4 sm:px-6 py-6 flex flex-col gap-4">
           <div class="flex items-center gap-2 shrink-0">
@@ -205,53 +197,39 @@ type PickerView = 'calendar' | 'timeslots';
           <div class="rounded-xl overflow-hidden ring-1 ring-black/5 dark:ring-white/10 shadow-sm bg-white dark:bg-zinc-900">
             @for (slot of timeSlots; track slot.value) {
               @if (getSlotEvent(slot.value); as ev) {
-                <!-- Booked slot -->
                 <div class="flex items-stretch border-b border-gray-100 dark:border-zinc-800 last:border-b-0">
-                  <div class="w-20 sm:w-24 shrink-0 flex items-center justify-end pr-3 py-3 text-xs font-semibold text-gray-400 dark:text-zinc-500 border-r border-gray-100 dark:border-zinc-800">
+                  <div class="w-20 sm:w-24 shrink-0 flex items-center justify-end pr-3 py-3 text-xs font-semibold text-gray-400 border-r border-gray-100 dark:border-zinc-800">
                     {{ slot.label }}
                   </div>
-                  <div
-                    class="flex-1 px-3 py-2.5 flex items-center gap-2"
+                  <div class="flex-1 px-3 py-2.5 flex items-center gap-2"
                     [class.bg-sky-50]="ev.eventKind !== 'COORDINATION'"
                     [class.dark:bg-sky-950/40]="ev.eventKind !== 'COORDINATION'"
                     [class.bg-amber-50]="ev.eventKind === 'COORDINATION'"
-                    [class.dark:bg-amber-950/40]="ev.eventKind === 'COORDINATION'"
-                  >
+                    [class.dark:bg-amber-950/40]="ev.eventKind === 'COORDINATION'">
                     <div class="flex-1 min-w-0">
-                      <p
-                        class="text-xs font-bold truncate"
+                      <p class="text-xs font-bold truncate"
                         [class.text-sky-700]="ev.eventKind !== 'COORDINATION'"
-                        [class.dark:text-sky-300]="ev.eventKind !== 'COORDINATION'"
                         [class.text-amber-700]="ev.eventKind === 'COORDINATION'"
-                        [class.dark:text-amber-300]="ev.eventKind === 'COORDINATION'"
                       >{{ ev.eventKind === 'COORDINATION' ? '📋 Coordination Meeting' : ev.department }}</p>
-                      <p
-                        class="text-[10px]"
+                      <p class="text-[10px]"
                         [class.text-sky-500]="ev.eventKind !== 'COORDINATION'"
-                        [class.dark:text-sky-400]="ev.eventKind !== 'COORDINATION'"
                         [class.text-amber-500]="ev.eventKind === 'COORDINATION'"
-                        [class.dark:text-amber-400]="ev.eventKind === 'COORDINATION'"
-                      >{{ ev.startTime }} – {{ ev.endTime }} · {{ ev.eventKind === 'COORDINATION' ? 'Blocked' : 'Reserved' }}</p>
+                      >{{ ev.startTime }} – {{ ev.endTime }}</p>
                     </div>
-                    <ui-icon
-                      [name]="ev.eventKind === 'COORDINATION' ? 'handshake' : 'lock'"
+                    <ui-icon [name]="ev.eventKind === 'COORDINATION' ? 'handshake' : 'lock'"
                       class="text-sm shrink-0"
                       [class.text-sky-400]="ev.eventKind !== 'COORDINATION'"
-                      [class.text-amber-400]="ev.eventKind === 'COORDINATION'"
-                    />
+                      [class.text-amber-400]="ev.eventKind === 'COORDINATION'" />
                   </div>
                 </div>
               } @else {
-                <!-- Available -->
-                <div
-                  class="flex items-stretch border-b border-gray-100 dark:border-zinc-800 last:border-b-0 cursor-pointer group"
+                <div class="flex items-stretch border-b border-gray-100 dark:border-zinc-800 last:border-b-0 cursor-pointer group"
                   [class.ring-2]="isHourInSelection(slot.value)"
                   [class.ring-amber-500]="isHourInSelection(slot.value)"
                   [class.bg-amber-50]="isHourInSelection(slot.value)"
                   [class.dark:bg-amber-950/20]="isHourInSelection(slot.value)"
-                  (click)="toggleHour(slot.value)"
-                >
-                  <div class="w-20 sm:w-24 shrink-0 flex items-center justify-end pr-3 py-3 text-xs font-semibold text-gray-400 dark:text-zinc-500 border-r border-gray-100 dark:border-zinc-800">
+                  (click)="toggleHour(slot.value)">
+                  <div class="w-20 sm:w-24 shrink-0 flex items-center justify-end pr-3 py-3 text-xs font-semibold text-gray-400 border-r border-gray-100 dark:border-zinc-800">
                     {{ slot.label }}
                   </div>
                   <div class="flex-1 px-3 py-2.5 flex items-center gap-2 group-hover:bg-amber-50 dark:group-hover:bg-amber-950/20 transition-colors">
@@ -278,8 +256,7 @@ type PickerView = 'calendar' | 'timeslots';
               class="flex-1 flex items-center justify-center gap-2 rounded-xl border border-gray-300 dark:border-zinc-600 px-4 py-3 text-sm font-semibold text-gray-700 dark:text-zinc-300 hover:bg-gray-50 dark:hover:bg-zinc-800 transition-colors cursor-pointer">
               <ui-icon name="arrow_back" class="text-base" /> Back
             </button>
-            <button type="button" (click)="confirmTimeSlot()"
-              [disabled]="selStart() === null"
+            <button type="button" (click)="confirmTimeSlot()" [disabled]="selStart() === null"
               class="flex-1 flex items-center justify-center gap-2 rounded-xl bg-amber-500 px-4 py-3 text-sm font-bold text-white hover:bg-amber-600 transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed shadow-sm">
               <ui-icon name="check" class="text-base" /> Confirm Slot
             </button>
@@ -289,26 +266,24 @@ type PickerView = 'calendar' | 'timeslots';
     </div>
   `,
 })
-export class FltCoordinationCalendar {
-  @Input() events: RescheduleEvent[] = [];
+export class GymnasiumCoordinationCalendar {
+  @Input() events: GymRescheduleEvent[] = [];
   @Input() eventTitle = '';
   @Input() saving = signal(false);
-  /** Pre-existing coordination slot to highlight on open (if any) */
-  @Input() set initial(v: CoordinationSlot | null) {
+  @Input() set initial(v: GymCoordinationSlot | null) {
     if (v) {
       this.selectedSlot.set(v);
-      // Jump to that month
       const [y, m] = v.date.split('-').map(Number);
       this.activeYear.set(y);
       this.activeMonth.set(m - 1);
     }
   }
-  @Output() saved = new EventEmitter<CoordinationSlot>();
+  @Output() saved = new EventEmitter<GymCoordinationSlot>();
   @Output() cancelled = new EventEmitter<void>();
 
   readonly pickerView = signal<PickerView>('calendar');
   readonly selectedDay = signal<string | null>(null);
-  readonly selectedSlot = signal<CoordinationSlot | null>(null);
+  readonly selectedSlot = signal<GymCoordinationSlot | null>(null);
   readonly selStart = signal<number | null>(null);
   readonly selEnd = signal<number | null>(null);
   readonly timeSlotError = signal('');
@@ -342,18 +317,11 @@ export class FltCoordinationCalendar {
       }
       const day = dayOffset + 1;
       const dateStr = this.fmt(new Date(year, month, day));
-      return {
-        day, dateStr,
-        isToday: dateStr === todayStr,
-        isPast: dateStr < todayStr,
-        events: evs.filter(e => e.date === dateStr),
-      };
+      return { day, dateStr, isToday: dateStr === todayStr, isPast: dateStr < todayStr, events: evs.filter(e => e.date === dateStr) };
     });
   });
 
-  readonly calendarRows = computed(() =>
-    `repeat(${this.calendarCells().length / 7}, minmax(5rem, 1fr))`
-  );
+  readonly calendarRows = computed(() => `repeat(${this.calendarCells().length / 7}, minmax(5rem, 1fr))`);
 
   prevMonth(): void {
     if (this.activeMonth() === 0) { this.activeMonth.set(11); this.activeYear.update(y => y - 1); }
@@ -373,7 +341,7 @@ export class FltCoordinationCalendar {
     this.pickerView.set('timeslots');
   }
 
-  getSlotEvent(hourStr: string): RescheduleEvent | null {
+  getSlotEvent(hourStr: string): GymRescheduleEvent | null {
     const day = this.selectedDay();
     if (!day) return null;
     const hour = parseInt(hourStr, 10);
@@ -396,27 +364,20 @@ export class FltCoordinationCalendar {
     const hour = parseInt(hourStr, 10);
     const start = this.selStart();
     if (start === null) {
-      this.selStart.set(hour);
-      this.selEnd.set(null);
-      this.timeSlotError.set('');
+      this.selStart.set(hour); this.selEnd.set(null); this.timeSlotError.set('');
     } else if (hour === start) {
-      this.selStart.set(null);
-      this.selEnd.set(null);
+      this.selStart.set(null); this.selEnd.set(null);
     } else {
       const [lo, hi] = hour > start ? [start, hour + 1] : [hour, start + 1];
       const conflict = this.events.find(ev => {
         if (ev.date !== this.selectedDay()) return false;
-        const es = parseInt(ev.startTime, 10);
-        const ee = parseInt(ev.endTime, 10);
-        return lo < ee && hi > es;
+        return lo < parseInt(ev.endTime, 10) && hi > parseInt(ev.startTime, 10);
       });
       if (conflict) {
         this.timeSlotError.set('Selection overlaps with an existing event or coordination meeting.');
         return;
       }
-      this.selStart.set(lo);
-      this.selEnd.set(hi);
-      this.timeSlotError.set('');
+      this.selStart.set(lo); this.selEnd.set(hi); this.timeSlotError.set('');
     }
   }
 
@@ -430,8 +391,7 @@ export class FltCoordinationCalendar {
       startTime: `${String(start).padStart(2, '0')}:00`,
       endTime: `${String(end).padStart(2, '0')}:00`,
     });
-    this.selStart.set(null);
-    this.selEnd.set(null);
+    this.selStart.set(null); this.selEnd.set(null);
     this.pickerView.set('calendar');
   }
 

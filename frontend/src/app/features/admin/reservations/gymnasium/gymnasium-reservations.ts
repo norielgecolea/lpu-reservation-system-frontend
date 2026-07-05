@@ -8,25 +8,22 @@ import {
   signal,
 } from '@angular/core';
 import { Subscription } from 'rxjs';
-import { HttpClient } from '@angular/common/http';
-import { firstValueFrom } from 'rxjs';
-import { FltRescheduleCalendar, RescheduleEvent } from './flt-reschedule-calendar';
-import { CoordinationSlot, FltCoordinationCalendar } from './flt-coordination-calendar';
-
+import { GymnasiumRescheduleCalendar, GymRescheduleEvent } from './gymnasium-reschedule-calendar';
+import { GymCoordinationSlot, GymnasiumCoordinationCalendar } from './gymnasium-coordination-calendar';
 import { AdminShell } from '../../../../shared/layout/admin-shell/admin-shell';
 import { UiIcon, UiInputSearch, UiSegmented, UiToast } from '../../../../shared/ui';
+import { MaintenanceBlock, MaintenanceService } from '../../../admin/maintenance/maintenance.service';
+import { MaintenanceCalendarPicker, MaintenanceSlot, ScheduledEvent } from '../../../admin/maintenance/maintenance-calendar-picker';
 import {
-  FltReservationRecord,
+  GymReservationRecord,
   RequestedEquipmentItem,
   ReservationStatus,
   ReservedDateSlot,
   SetCoordinationRequest,
-} from './flt-reservations.models';
-import { FltReservationsService } from './flt-reservations.service';
+} from './gymnasium-reservations.models';
+import { GymReservationsService } from './gymnasium-reservations.service';
 import { ReservationRealtimeService, ReservationWsEvent } from '../reservation-realtime.service';
 import { applyReservationWsEvent } from '../reservation-ws.util';
-import { MaintenanceBlock, MaintenanceService } from '../../../admin/maintenance/maintenance.service';
-import { MaintenanceCalendarPicker, MaintenanceSlot, ScheduledEvent } from '../../../admin/maintenance/maintenance-calendar-picker';
 
 const STATUS_FILTERS = ['All', 'PENDING', 'APPROVED', 'REJECTED', 'CANCELLED', 'COMPLETED', 'CONFLICT'] as const;
 type StatusFilter = (typeof STATUS_FILTERS)[number];
@@ -38,16 +35,16 @@ interface ConfirmState {
 }
 
 @Component({
-  selector: 'app-flt-reservations',
-  imports: [AdminShell, UiIcon, UiInputSearch, UiSegmented, UiToast, FltRescheduleCalendar, FltCoordinationCalendar, MaintenanceCalendarPicker],
+  selector: 'app-gymnasium-reservations',
+  imports: [AdminShell, UiIcon, UiInputSearch, UiSegmented, UiToast, GymnasiumRescheduleCalendar, GymnasiumCoordinationCalendar, MaintenanceCalendarPicker],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <app-admin-shell>
       <!-- Header -->
       <div class="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 class="text-xl font-black text-gray-900 dark:text-zinc-100">FLT Theater Reservations</h1>
-          <p class="text-sm text-gray-500 dark:text-zinc-400 mt-0.5">Review and manage all FLT reservation requests</p>
+          <h1 class="text-xl font-black text-gray-900 dark:text-zinc-100">Gymnasium Reservations</h1>
+          <p class="text-sm text-gray-500 dark:text-zinc-400 mt-0.5">Review and manage all Gymnasium reservation requests</p>
         </div>
         <div class="flex items-center gap-3">
           <button type="button" (click)="openMaintenance()"
@@ -59,7 +56,7 @@ interface ConfirmState {
             }
           </button>
           <div class="flex items-center gap-2 text-sm text-gray-500 dark:text-zinc-400">
-            <ui-icon name="event_note" class="text-primary text-base" />
+            <ui-icon name="sports_gymnastics" class="text-primary text-base" />
             <span>{{ filtered().length }} of {{ reservations().length }} shown</span>
           </div>
         </div>
@@ -67,11 +64,7 @@ interface ConfirmState {
 
       <!-- Filters -->
       <div class="flex flex-col sm:flex-row gap-3">
-        <ui-input-search
-          placeholder="Search by event, department, contact..."
-          (valueChange)="search.set($event)"
-          class="flex-1"
-        />
+        <ui-input-search placeholder="Search by event, department, contact..." (valueChange)="search.set($event)" class="flex-1" />
         <ui-segmented [options]="statusFilters" [value]="statusFilter()" (valueChange)="statusFilter.set($any($event))" />
       </div>
 
@@ -85,12 +78,8 @@ interface ConfirmState {
         <div class="flex flex-col items-center justify-center gap-3 py-20 text-center">
           <ui-icon name="cloud_off" class="text-5xl text-red-300 dark:text-red-700" />
           <p class="text-sm font-semibold text-red-500 dark:text-red-400">Failed to load reservations</p>
-          <p class="text-xs text-gray-400 dark:text-zinc-500 max-w-xs">The server could not be reached or returned an error. Make sure the backend is running and your session is valid.</p>
-          <button
-            type="button"
-            (click)="load()"
-            class="flex items-center gap-1.5 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white hover:bg-primary/90 transition-colors cursor-pointer mt-1"
-          >
+          <button type="button" (click)="load()"
+            class="flex items-center gap-1.5 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white hover:bg-primary/90 transition-colors cursor-pointer mt-1">
             <ui-icon name="refresh" class="text-base" />
             Retry
           </button>
@@ -111,7 +100,7 @@ interface ConfirmState {
                 <th class="px-4 py-3 text-left text-xs font-bold uppercase tracking-wide text-gray-500 dark:text-zinc-400 hidden md:table-cell">Dept / Org</th>
                 <th class="px-4 py-3 text-left text-xs font-bold uppercase tracking-wide text-gray-500 dark:text-zinc-400 hidden lg:table-cell">Contact</th>
                 <th class="px-4 py-3 text-left text-xs font-bold uppercase tracking-wide text-gray-500 dark:text-zinc-400 hidden xl:table-cell">Dates</th>
-                <th class="px-4 py-3 text-left text-xs font-bold uppercase tracking-wide text-gray-500 dark:text-zinc-400 hidden lg:table-cell">Room / Pax</th>
+                <th class="px-4 py-3 text-left text-xs font-bold uppercase tracking-wide text-gray-500 dark:text-zinc-400 hidden lg:table-cell">Attendees</th>
                 <th class="px-4 py-3 text-left text-xs font-bold uppercase tracking-wide text-gray-500 dark:text-zinc-400 hidden xl:table-cell">Equipment</th>
                 <th class="px-4 py-3 text-left text-xs font-bold uppercase tracking-wide text-gray-500 dark:text-zinc-400">Status</th>
                 <th class="px-4 py-3 text-right text-xs font-bold uppercase tracking-wide text-gray-500 dark:text-zinc-400">Actions</th>
@@ -125,13 +114,12 @@ interface ConfirmState {
                   <!-- Event -->
                   <td class="px-4 py-3 max-w-[200px] cursor-pointer hover:bg-gray-50/80 dark:hover:bg-zinc-800/40 transition-colors" (click)="openDetails(row)">
                     <p class="font-semibold text-gray-900 dark:text-zinc-100 truncate">{{ row.eventTitle }}</p>
-                    <p class="text-xs text-gray-500 dark:text-zinc-400 capitalize">{{ row.eventType }}</p>
-                    <p class="text-[11px] text-gray-400 dark:text-zinc-500 mt-0.5">{{ formatDate(row.createdAt) }}</p>
                     @if (row.additionalInstructions) {
                       <p class="mt-1 text-[10px] italic text-amber-600 dark:text-amber-400 truncate max-w-[180px]" [title]="row.additionalInstructions">
                         📝 {{ row.additionalInstructions }}
                       </p>
                     }
+                    <p class="text-[11px] text-gray-400 dark:text-zinc-500 mt-0.5">{{ formatDate(row.createdAt) }}</p>
                     <p class="mt-1 text-[10px] font-semibold text-primary">Click to view full summary</p>
                   </td>
 
@@ -159,11 +147,12 @@ interface ConfirmState {
                     }
                   </td>
 
-                  <!-- Room / Pax -->
-                  <td class="px-4 py-3 hidden lg:table-cell max-w-[130px]">
-                    <p class="text-xs font-medium text-gray-700 dark:text-zinc-300">{{ row.roomType ? getRoomTypeLabel(row.roomType) : '—' }}</p>
-                    @if (row.expectedAttendees) {
-                      <p class="text-xs text-gray-400 dark:text-zinc-500">{{ row.expectedAttendees }} pax</p>
+                  <!-- Attendees -->
+                  <td class="px-4 py-3 hidden lg:table-cell max-w-[100px]">
+                    @if (row.numberOfAttendees) {
+                      <p class="text-xs font-medium text-gray-700 dark:text-zinc-300">{{ row.numberOfAttendees }} pax</p>
+                    } @else {
+                      <span class="text-xs text-gray-400 dark:text-zinc-500">—</span>
                     }
                   </td>
 
@@ -226,85 +215,45 @@ interface ConfirmState {
                   <td class="px-4 py-3 text-right">
                     @if (row.status === 'PENDING') {
                       <div class="flex items-center justify-end gap-1.5">
-                        <button
-                          type="button"
-                          (click)="requestConfirm(row, 'APPROVED')"
-                          [disabled]="acting() === row.id"
-                          class="flex items-center gap-1 rounded-lg bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 px-2.5 py-1.5 text-xs font-semibold text-emerald-700 dark:text-emerald-400 hover:bg-emerald-100 dark:hover:bg-emerald-900/40 transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
-                        >
+                        <button type="button" (click)="requestConfirm(row, 'APPROVED')" [disabled]="acting() === row.id"
+                          class="flex items-center gap-1 rounded-lg bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 px-2.5 py-1.5 text-xs font-semibold text-emerald-700 dark:text-emerald-400 hover:bg-emerald-100 dark:hover:bg-emerald-900/40 transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed">
                           <ui-icon name="check_circle" class="text-sm" />
                           Approve
                         </button>
-                        <button
-                          type="button"
-                          (click)="requestConfirm(row, 'REJECTED')"
-                          [disabled]="acting() === row.id"
-                          class="flex items-center gap-1 rounded-lg bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-800 px-2.5 py-1.5 text-xs font-semibold text-red-700 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-900/40 transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
-                        >
+                        <button type="button" (click)="requestConfirm(row, 'REJECTED')" [disabled]="acting() === row.id"
+                          class="flex items-center gap-1 rounded-lg bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-800 px-2.5 py-1.5 text-xs font-semibold text-red-700 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-900/40 transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed">
                           <ui-icon name="cancel" class="text-sm" />
                           Reject
                         </button>
                       </div>
                     } @else if (row.status === 'CONFLICT') {
                       <div class="flex items-center justify-end gap-1.5">
-                        <button
-                          type="button"
-                          (click)="requestConfirm(row, 'REJECTED')"
-                          [disabled]="acting() === row.id"
-                          class="flex items-center gap-1 rounded-lg bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-800 px-2.5 py-1.5 text-xs font-semibold text-red-700 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-900/40 transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
-                        >
+                        <button type="button" (click)="requestConfirm(row, 'REJECTED')" [disabled]="acting() === row.id"
+                          class="flex items-center gap-1 rounded-lg bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-800 px-2.5 py-1.5 text-xs font-semibold text-red-700 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-900/40 transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed">
                           <ui-icon name="cancel" class="text-sm" />
                           Reject
                         </button>
                       </div>
                     } @else if (row.status === 'APPROVED') {
                       <div class="flex items-center justify-end gap-1.5 flex-wrap">
-                        <button
-                          type="button"
-                          (click)="openCoordination(row)"
-                          [disabled]="acting() === row.id"
+                        <button type="button" (click)="openCoordination(row)" [disabled]="acting() === row.id"
                           class="flex items-center gap-1 rounded-lg bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 px-2.5 py-1.5 text-xs font-semibold text-amber-700 dark:text-amber-400 hover:bg-amber-100 dark:hover:bg-amber-900/40 transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
-                          [title]="row.coordinationDate ? 'Update coordination: ' + row.coordinationDate : 'Set coordination meeting'"
-                        >
+                          [title]="row.coordinationDate ? 'Update coordination: ' + row.coordinationDate : 'Set coordination meeting'">
                           <ui-icon name="handshake" class="text-sm" />
                           {{ row.coordinationDate ? 'Coordination ✓' : 'Coordination' }}
                         </button>
-                        <button
-                          type="button"
-                          (click)="openReschedule(row)"
-                          [disabled]="acting() === row.id"
-                          class="flex items-center gap-1 rounded-lg bg-sky-50 dark:bg-sky-950/40 border border-sky-200 dark:border-sky-800 px-2.5 py-1.5 text-xs font-semibold text-sky-700 dark:text-sky-400 hover:bg-sky-100 dark:hover:bg-sky-900/40 transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
-                        >
+                        <button type="button" (click)="openReschedule(row)" [disabled]="acting() === row.id"
+                          class="flex items-center gap-1 rounded-lg bg-sky-50 dark:bg-sky-950/40 border border-sky-200 dark:border-sky-800 px-2.5 py-1.5 text-xs font-semibold text-sky-700 dark:text-sky-400 hover:bg-sky-100 dark:hover:bg-sky-900/40 transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed">
                           <ui-icon name="edit_calendar" class="text-sm" />
                           Reschedule
                         </button>
-                        <button
-                          type="button"
-                          (click)="requestConfirm(row, 'COMPLETED')"
-                          [disabled]="acting() === row.id"
-                          class="flex items-center gap-1 rounded-lg bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 px-2.5 py-1.5 text-xs font-semibold text-emerald-700 dark:text-emerald-400 hover:bg-emerald-100 dark:hover:bg-emerald-900/40 transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
-                        >
+                        <button type="button" (click)="requestConfirm(row, 'COMPLETED')" [disabled]="acting() === row.id"
+                          class="flex items-center gap-1 rounded-lg bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 px-2.5 py-1.5 text-xs font-semibold text-emerald-700 dark:text-emerald-400 hover:bg-emerald-100 dark:hover:bg-emerald-900/40 transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed">
                           <ui-icon name="task_alt" class="text-sm" />
                           Complete
                         </button>
-                        @if (row.coordinationDate && row.coordinationStartTime && row.coordinationEndTime) {
-                          <button
-                            type="button"
-                            (click)="downloadReservationForm(row)"
-                            [disabled]="acting() === row.id"
-                            class="flex items-center gap-1 rounded-lg bg-indigo-50 dark:bg-indigo-950/40 border border-indigo-200 dark:border-indigo-800 px-2.5 py-1.5 text-xs font-semibold text-indigo-700 dark:text-indigo-400 hover:bg-indigo-100 dark:hover:bg-indigo-900/40 transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
-                            title="Download reservation form"
-                          >
-                            <ui-icon name="download" class="text-sm" />
-                            Download
-                          </button>
-                        }
-                        <button
-                          type="button"
-                          (click)="requestConfirm(row, 'CANCELLED')"
-                          [disabled]="acting() === row.id"
-                          class="flex items-center gap-1 rounded-lg bg-gray-100 dark:bg-zinc-700 border border-gray-200 dark:border-zinc-600 px-2.5 py-1.5 text-xs font-semibold text-gray-600 dark:text-zinc-300 hover:bg-gray-200 dark:hover:bg-zinc-600 transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
-                        >
+                        <button type="button" (click)="requestConfirm(row, 'CANCELLED')" [disabled]="acting() === row.id"
+                          class="flex items-center gap-1 rounded-lg bg-gray-100 dark:bg-zinc-700 border border-gray-200 dark:border-zinc-600 px-2.5 py-1.5 text-xs font-semibold text-gray-600 dark:text-zinc-300 hover:bg-gray-200 dark:hover:bg-zinc-600 transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed">
                           <ui-icon name="block" class="text-sm" />
                           Cancel
                         </button>
@@ -329,11 +278,8 @@ interface ConfirmState {
                 <h2 class="text-lg font-black text-gray-900 dark:text-zinc-100">Event Summary</h2>
                 <p class="text-xs text-gray-500 dark:text-zinc-400 mt-0.5">Reservation #{{ detailsTarget()!.id }} · {{ detailsTarget()!.status }}</p>
               </div>
-              <button
-                type="button"
-                (click)="closeDetails()"
-                class="flex h-8 w-8 items-center justify-center rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 dark:hover:bg-zinc-800 transition-colors cursor-pointer"
-              >
+              <button type="button" (click)="closeDetails()"
+                class="flex h-8 w-8 items-center justify-center rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 dark:hover:bg-zinc-800 transition-colors cursor-pointer">
                 <ui-icon name="close" class="text-lg" />
               </button>
             </div>
@@ -342,7 +288,6 @@ interface ConfirmState {
               <div class="rounded-xl border border-gray-200 dark:border-zinc-700 p-3">
                 <p class="text-xs uppercase tracking-wide font-bold text-gray-400">Event</p>
                 <p class="font-semibold text-gray-900 dark:text-zinc-100 mt-1">{{ detailsTarget()!.eventTitle }}</p>
-                <p class="text-xs text-gray-500 dark:text-zinc-400 capitalize">{{ detailsTarget()!.eventType }}</p>
               </div>
               <div class="rounded-xl border border-gray-200 dark:border-zinc-700 p-3">
                 <p class="text-xs uppercase tracking-wide font-bold text-gray-400">Organization</p>
@@ -356,9 +301,8 @@ interface ConfirmState {
                 <p class="text-xs text-gray-500 dark:text-zinc-400">{{ detailsTarget()!.contactNumber }}</p>
               </div>
               <div class="rounded-xl border border-gray-200 dark:border-zinc-700 p-3">
-                <p class="text-xs uppercase tracking-wide font-bold text-gray-400">Room / Attendees</p>
-                <p class="font-semibold text-gray-900 dark:text-zinc-100 mt-1">{{ detailsTarget()!.roomType ? getRoomTypeLabel(detailsTarget()!.roomType) : '—' }}</p>
-                <p class="text-xs text-gray-500 dark:text-zinc-400">{{ detailsTarget()!.expectedAttendees || '—' }} pax</p>
+                <p class="text-xs uppercase tracking-wide font-bold text-gray-400">Attendees</p>
+                <p class="font-semibold text-gray-900 dark:text-zinc-100 mt-1">{{ detailsTarget()!.numberOfAttendees || '—' }} pax</p>
               </div>
             </div>
 
@@ -399,11 +343,8 @@ interface ConfirmState {
             }
 
             <div class="flex justify-end">
-              <button
-                type="button"
-                (click)="closeDetails()"
-                class="rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white hover:bg-primary/90 transition-colors cursor-pointer"
-              >
+              <button type="button" (click)="closeDetails()"
+                class="rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white hover:bg-primary/90 transition-colors cursor-pointer">
                 Close
               </button>
             </div>
@@ -439,22 +380,16 @@ interface ConfirmState {
                 </h2>
                 <p class="text-xs text-gray-500 dark:text-zinc-400 mt-1">
                   Are you sure you want to mark the reservation for
-                  <strong>"{{ confirm()!.eventTitle }}"</strong> as <strong class="lowercase">{{ confirm()!.action.toLowerCase() }}</strong>? This cannot be undone.
+                  <strong>"{{ confirm()!.eventTitle }}"</strong> as <strong class="lowercase">{{ confirm()!.action.toLowerCase() }}</strong>?
                 </p>
               </div>
             </div>
             <div class="flex gap-2 justify-end">
-              <button
-                type="button"
-                (click)="confirm.set(null)"
-                class="rounded-lg border border-gray-200 dark:border-zinc-700 px-4 py-2 text-sm font-semibold text-gray-600 dark:text-zinc-300 hover:bg-gray-50 dark:hover:bg-zinc-800 cursor-pointer transition-colors"
-              >
+              <button type="button" (click)="confirm.set(null)"
+                class="rounded-lg border border-gray-200 dark:border-zinc-700 px-4 py-2 text-sm font-semibold text-gray-600 dark:text-zinc-300 hover:bg-gray-50 dark:hover:bg-zinc-800 cursor-pointer transition-colors">
                 Cancel
               </button>
-              <button
-                type="button"
-                (click)="executeAction()"
-                [disabled]="acting() !== null"
+              <button type="button" (click)="executeAction()" [disabled]="acting() !== null"
                 class="rounded-lg px-4 py-2 text-sm font-bold text-white cursor-pointer transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 [class.bg-emerald-600]="confirm()!.action === 'APPROVED'"
                 [class.hover:bg-emerald-700]="confirm()!.action === 'APPROVED'"
@@ -465,24 +400,20 @@ interface ConfirmState {
                 [class.bg-gray-600]="confirm()!.action === 'CANCELLED'"
                 [class.hover:bg-gray-700]="confirm()!.action === 'CANCELLED'"
               >
-                @if (acting() !== null) {
-                  <ui-icon name="autorenew" class="text-base animate-spin" />
-                } @else {
-                  Confirm
-                }
+                @if (acting() !== null) { <ui-icon name="autorenew" class="text-base animate-spin" /> }
+                @else { Confirm }
               </button>
             </div>
           </div>
         </div>
       }
 
-      <!-- Toast -->
       <ui-toast [message]="toast()" (dismissed)="toast.set('')" />
     </app-admin-shell>
 
-    <!-- ─── Coordination Calendar Overlay ─── -->
+    <!-- Coordination Calendar Overlay -->
     @if (coordinationTarget()) {
-      <app-flt-coordination-calendar
+      <app-gymnasium-coordination-calendar
         [events]="coordinationCalendarEvents()"
         [eventTitle]="coordinationTarget()!.eventTitle"
         [saving]="coordSaving"
@@ -492,9 +423,9 @@ interface ConfirmState {
       />
     }
 
-    <!-- ─── Reschedule Calendar Overlay ─── (outside admin-shell so it covers full viewport) -->
+    <!-- Reschedule Calendar Overlay -->
     @if (rescheduleTarget()) {
-      <app-flt-reschedule-calendar
+      <app-gymnasium-reschedule-calendar
         [events]="rescheduleApprovedEvents()"
         [initialSlots]="rescheduleInitialSlots()"
         [eventTitle]="rescheduleTarget()!.eventTitle"
@@ -507,7 +438,7 @@ interface ConfirmState {
     <!-- ─── Maintenance Calendar Overlay ─── -->
     @if (showMaintenance()) {
       <app-maintenance-calendar-picker
-        facilityLabel="FLT Theater"
+        facilityLabel="Gymnasium"
         [existingBlocks]="maintenanceBlocks()"
         [events]="maintenanceEvents()"
         [saving]="maintSaving"
@@ -518,21 +449,20 @@ interface ConfirmState {
     }
   `,
 })
-export class FltReservations implements OnInit, OnDestroy {
-  private readonly svc  = inject(FltReservationsService);
-  private readonly http = inject(HttpClient);
+export class GymnasiumReservations implements OnInit, OnDestroy {
+  private readonly svc = inject(GymReservationsService);
   private readonly maintSvc = inject(MaintenanceService);
   private readonly realtime = inject(ReservationRealtimeService);
   private wsSub?: Subscription;
 
   readonly loading = signal(true);
   readonly apiError = signal(false);
-  readonly reservations = signal<FltReservationRecord[]>([]);
+  readonly reservations = signal<GymReservationRecord[]>([]);
   readonly search = signal('');
   readonly statusFilter = signal<StatusFilter>('All');
   readonly acting = signal<number | null>(null);
   readonly confirm = signal<ConfirmState | null>(null);
-  readonly detailsTarget = signal<FltReservationRecord | null>(null);
+  readonly detailsTarget = signal<GymReservationRecord | null>(null);
   readonly toast = signal('');
 
   // Maintenance
@@ -559,27 +489,24 @@ export class FltReservations implements OnInit, OnDestroy {
       })
   );
 
-  // Coordination modal
   readonly coordinationTarget = signal<{ id: number; eventTitle: string } | null>(null);
   readonly coordSaving = signal(false);
 
-  // Reschedule calendar overlay
   readonly rescheduleTarget = signal<{ id: number; eventTitle: string } | null>(null);
   readonly rescheduleSaving = signal(false);
 
-  /** Events to show on the reschedule calendar — all approved reservations/coordination EXCEPT the one being rescheduled */
-  readonly rescheduleApprovedEvents = computed<RescheduleEvent[]>(() => {
+  readonly rescheduleApprovedEvents = computed<GymRescheduleEvent[]>(() => {
     const target = this.rescheduleTarget();
-    const events: RescheduleEvent[] = [];
+    const events: GymRescheduleEvent[] = [];
     for (const r of this.reservations()) {
       if (r.status !== 'APPROVED' && r.status !== 'COMPLETED') continue;
-      if (r.id === target?.id) continue; // skip self
+      if (r.id === target?.id) continue;
       try {
         const slots: ReservedDateSlot[] = JSON.parse(r.reservedDates);
         for (const s of slots) {
           events.push({ date: s.date, startTime: s.startTime, endTime: s.endTime, department: r.department, organization: r.organization, eventKind: 'RESERVATION' });
         }
-      } catch { /* ignore */ }
+      } catch { /* skip */ }
       if (r.coordinationDate && r.coordinationStartTime && r.coordinationEndTime) {
         events.push({ date: r.coordinationDate, startTime: r.coordinationStartTime, endTime: r.coordinationEndTime, department: r.department, organization: r.organization, eventKind: 'COORDINATION' });
       }
@@ -587,7 +514,6 @@ export class FltReservations implements OnInit, OnDestroy {
     return events;
   });
 
-  /** Pre-populate the calendar basket with the current reservation's slots */
   readonly rescheduleInitialSlots = computed<ReservedDateSlot[]>(() => {
     const target = this.rescheduleTarget();
     if (!target) return [];
@@ -596,20 +522,18 @@ export class FltReservations implements OnInit, OnDestroy {
     try { return JSON.parse(row.reservedDates); } catch { return []; }
   });
 
-  /** Events shown inside the coordination calendar (exclude the coordination meeting of the target reservation) */
-  readonly coordinationCalendarEvents = computed<RescheduleEvent[]>(() => {
+  readonly coordinationCalendarEvents = computed<GymRescheduleEvent[]>(() => {
     const target = this.coordinationTarget();
     return this.reservations()
       .filter(r => r.status === 'APPROVED' || r.status === 'COMPLETED')
-      .flatMap((r): RescheduleEvent[] => {
-        const events: RescheduleEvent[] = [];
+      .flatMap((r): GymRescheduleEvent[] => {
+        const events: GymRescheduleEvent[] = [];
         try {
           const slots: Array<{ date: string; startTime: string; endTime: string }> = JSON.parse(r.reservedDates);
           for (const s of slots) {
             events.push({ date: s.date, startTime: s.startTime, endTime: s.endTime, department: r.department, organization: r.organization, eventKind: 'RESERVATION' });
           }
         } catch { /* skip */ }
-        // Add the coordination meeting for all reservations except the one being edited
         if (r.coordinationDate && r.coordinationStartTime && r.coordinationEndTime && (!target || r.id !== target.id)) {
           events.push({ date: r.coordinationDate, startTime: r.coordinationStartTime, endTime: r.coordinationEndTime, department: r.department, organization: r.organization, eventKind: 'COORDINATION' });
         }
@@ -617,8 +541,7 @@ export class FltReservations implements OnInit, OnDestroy {
       });
   });
 
-  /** Pre-populate coordination calendar with existing coordination slot */
-  readonly coordinationInitialSlot = computed<CoordinationSlot | null>(() => {
+  readonly coordinationInitialSlot = computed<GymCoordinationSlot | null>(() => {
     const target = this.coordinationTarget();
     if (!target) return null;
     const row = this.reservations().find(r => r.id === target.id);
@@ -633,13 +556,12 @@ export class FltReservations implements OnInit, OnDestroy {
     const status = this.statusFilter();
     const rows = this.reservations().filter(r => {
       const matchStatus = status === 'All' || r.status === status;
-      const matchSearch =
-        !q ||
-        r.eventTitle.toLowerCase().includes(q) ||
-        r.department.toLowerCase().includes(q) ||
-        r.organization.toLowerCase().includes(q) ||
-        r.contactPerson.toLowerCase().includes(q) ||
-        r.contactEmail.toLowerCase().includes(q);
+      const matchSearch = !q
+        || r.eventTitle.toLowerCase().includes(q)
+        || r.department.toLowerCase().includes(q)
+        || r.organization.toLowerCase().includes(q)
+        || r.contactPerson.toLowerCase().includes(q)
+        || r.contactEmail.toLowerCase().includes(q);
       return matchStatus && matchSearch;
     });
     return [...rows].sort((a, b) => {
@@ -657,7 +579,7 @@ export class FltReservations implements OnInit, OnDestroy {
     this.load();
     this.loadMaintenance();
     this.realtime.ensureConnected();
-    this.wsSub = this.realtime.fltUpdates$.subscribe(ev => this.handleWsEvent(ev));
+    this.wsSub = this.realtime.gymUpdates$.subscribe(ev => this.handleWsEvent(ev));
   }
 
   ngOnDestroy(): void {
@@ -683,22 +605,16 @@ export class FltReservations implements OnInit, OnDestroy {
     });
   }
 
-  requestConfirm(row: FltReservationRecord, action: ReservationStatus): void {
+  requestConfirm(row: GymReservationRecord, action: ReservationStatus): void {
     this.confirm.set({ id: row.id, action, eventTitle: row.eventTitle });
   }
 
-  openDetails(row: FltReservationRecord): void {
-    this.detailsTarget.set(row);
-  }
-
-  closeDetails(): void {
-    this.detailsTarget.set(null);
-  }
+  openDetails(row: GymReservationRecord): void { this.detailsTarget.set(row); }
+  closeDetails(): void { this.detailsTarget.set(null); }
 
   executeAction(): void {
     const state = this.confirm();
     if (!state) return;
-
     this.acting.set(state.id);
     this.svc.updateStatus(state.id, state.action).subscribe({
       next: (res) => {
@@ -729,16 +645,12 @@ export class FltReservations implements OnInit, OnDestroy {
     });
   }
 
-  // ─── Coordination ───────────────────────────────────────────────
-  openCoordination(row: FltReservationRecord): void {
+  openCoordination(row: GymReservationRecord): void {
     this.coordinationTarget.set({ id: row.id, eventTitle: row.eventTitle });
   }
+  closeCoordination(): void { this.coordinationTarget.set(null); }
 
-  closeCoordination(): void {
-    this.coordinationTarget.set(null);
-  }
-
-  saveCoordination(slot: CoordinationSlot): void {
+  saveCoordination(slot: GymCoordinationSlot): void {
     const target = this.coordinationTarget();
     if (!target) return;
     this.coordSaving.set(true);
@@ -760,14 +672,10 @@ export class FltReservations implements OnInit, OnDestroy {
     });
   }
 
-  // ─── Reschedule ─────────────────────────────────────────────────
-  openReschedule(row: FltReservationRecord): void {
+  openReschedule(row: GymReservationRecord): void {
     this.rescheduleTarget.set({ id: row.id, eventTitle: row.eventTitle });
   }
-
-  closeReschedule(): void {
-    this.rescheduleTarget.set(null);
-  }
+  closeReschedule(): void { this.rescheduleTarget.set(null); }
 
   saveReschedule(slots: ReservedDateSlot[]): void {
     const target = this.rescheduleTarget();
@@ -791,7 +699,7 @@ export class FltReservations implements OnInit, OnDestroy {
 
   // ─── Maintenance ────────────────────────────────────────────────
   loadMaintenance(): void {
-    this.maintSvc.getBlocks('FLT').subscribe({
+    this.maintSvc.getBlocks('GYMNASIUM').subscribe({
       next: (res) => { if (res.success) this.maintenanceBlocks.set(res.blocks ?? []); },
       error: () => {},
     });
@@ -802,7 +710,7 @@ export class FltReservations implements OnInit, OnDestroy {
 
   addMaintenanceBlock(slot: MaintenanceSlot): void {
     this.maintSaving.set(true);
-    this.maintSvc.createBlock({ facility: 'FLT', blockDate: slot.date, startTime: slot.startTime, endTime: slot.endTime, reason: slot.reason }).subscribe({
+    this.maintSvc.createBlock({ facility: 'GYMNASIUM', blockDate: slot.date, startTime: slot.startTime, endTime: slot.endTime, reason: slot.reason }).subscribe({
       next: (res) => {
         this.maintSaving.set(false);
         if (res.success && res.block) {
@@ -835,17 +743,6 @@ export class FltReservations implements OnInit, OnDestroy {
     return map[action] ?? action;
   }
 
-  private readonly ROOM_TYPE_LABELS: Record<string, string> = {
-    flt_theater: 'FLT Theater',
-    amphitheater: 'Amphitheater',
-    banquet_hall: 'Banquet Hall',
-  };
-
-  getRoomTypeLabel(value: string | null): string {
-    if (!value) return '—';
-    return this.ROOM_TYPE_LABELS[value] ?? value;
-  }
-
   handleWsEvent(ev: ReservationWsEvent): void {
     const { updated, needsReload } = applyReservationWsEvent(this.reservations(), ev);
     if (needsReload) {
@@ -855,7 +752,7 @@ export class FltReservations implements OnInit, OnDestroy {
     this.reservations.set(updated);
   }
 
-  hasApprovedOverlap(row: FltReservationRecord): boolean {
+  hasApprovedOverlap(row: GymReservationRecord): boolean {
     const targetSlots = this.parseDates(row.reservedDates);
     if (!targetSlots.length) return false;
     for (const other of this.reservations()) {
@@ -897,76 +794,7 @@ export class FltReservations implements OnInit, OnDestroy {
 
   formatDate(iso: string): string {
     if (!iso) return '';
-    try {
-      return new Date(iso).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-    } catch { return iso; }
+    try { return new Date(iso).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }); }
+    catch { return iso; }
   }
-
-  async downloadReservationForm(row: FltReservationRecord): Promise<void> {
-    if (!row.coordinationDate || !row.coordinationStartTime || !row.coordinationEndTime) {
-      this.toast.set('Please set coordination meeting first before downloading.');
-      return;
-    }
-
-    const slots      = this.parseDates(row.reservedDates);
-    const equipment  = this.parseEquipment(row.requestedEquipment).map(e => e.name).join(', ') || '–';
-    const slotDates  = slots.map(s => `${s.date}`).join(', ')                                   || '–';
-    const slotTimes  = slots.map(s => `${s.startTime} – ${s.endTime}`).join(', ')               || '–';
-    const room       = row.roomType ? this.getRoomTypeLabel(row.roomType) : '–';
-    try {
-      // Dynamic imports so these large libs are only loaded when needed
-      const [PizZip, Docxtemplater] = await Promise.all([
-        import('pizzip').then(m => m.default),
-        import('docxtemplater').then(m => m.default),
-      ]);
-
-      const templateBuf = await firstValueFrom(
-        this.http.get('/flt-reservation-template.docx', { responseType: 'arraybuffer' })
-      );
-
-      const zip = new PizZip(templateBuf);
-      const templateDoc = new Docxtemplater(zip, {
-        paragraphLoop: true,
-        linebreaks: true,
-      });
-
-      templateDoc.render({
-        eventTitle:              String(row.eventTitle           ?? ''),
-        eventType:               String(row.eventType            ?? ''),
-        expectedAttendees:       String(row.expectedAttendees    ?? ''),
-        eventDate:               slotDates,
-        eventTime:               slotTimes,
-        organizationDept:        `${row.organization ?? ''} / ${row.department ?? ''}`,
-        contactPerson:           String(row.contactPerson        ?? ''),
-        contactNumber:           String(row.contactNumber        ?? ''),
-        contactEmail:            String(row.contactEmail         ?? ''),
-        equipment:               equipment,
-        additionalInstructions:  String(row.additionalInstructions ?? ''),
-        coordinationDate:        String(row.coordinationDate       ?? ''),
-        coordinationTime:        `${row.coordinationStartTime ?? ''} - ${row.coordinationEndTime ?? ''}`,
-      });
-
-      const out  = templateDoc.getZip().generate({ type: 'blob', mimeType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' });
-      const url  = URL.createObjectURL(out);
-      const a    = document.createElement('a');
-      a.href     = url;
-      a.download = `FLT-Reservation-Form-${row.id}.docx`;
-      a.style.display = 'none';
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
-      this.toast.set('Reservation form downloaded.');
-    } catch (err: any) {
-      // docxtemplater wraps template errors in err.properties.errors
-      const inner = err?.properties?.errors;
-      if (inner?.length) {
-        inner.forEach((e: any) => console.error('docxtemplater:', e.message, e.properties));
-      } else {
-        console.error('downloadReservationForm error', err);
-      }
-      this.toast.set('Failed to generate form: ' + (err?.message ?? 'unknown error'));
-    }
-  }
-
 }

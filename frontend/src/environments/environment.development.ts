@@ -1,8 +1,7 @@
-// Dev: relative base; proxy.conf.js forwards /lpu-reservation-system/* and
-// /uploads/* to BACKEND_URL (read from .env).
+// Dev: API goes through proxy; WebSocket connects directly to Tomcat (proxy WS is unreliable).
 export const environment = {
   production: false,
   apiUrl: '/lpu-reservation-system/api',
-  // Backend root for assets outside the API context (e.g. /uploads).
+  wsUrl: 'http://localhost:8080/lpu-reservation-system/ws',
   backendUrl: '/',
 };

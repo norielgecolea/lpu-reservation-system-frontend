@@ -26,6 +26,7 @@
               }
             ],
             "styles": ["src/styles.css"],
+            "allowedCommonJsDependencies": ["sockjs-client", "pizzip", "docxtemplater"],
             "server": "src/main.server.ts",
             "outputMode": "server",
             "security": {
@@ -55,6 +56,7 @@
               "optimization": false,
               "extractLicenses": false,
               "sourceMap": true,
+              "outputMode": "static",
               "fileReplacements": [
                 {
                   "replace": "src/environments/environment.ts",

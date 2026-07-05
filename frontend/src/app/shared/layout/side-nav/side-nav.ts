@@ -43,14 +43,16 @@ export class SideNav implements OnInit {
     { label: 'Vehicles',    icon: 'directions_car',  link: '/vehicles' },
     {
       label: 'Reservation', icon: 'event_note', children: [
-        { label: 'FLT Theater', icon: 'theaters', link: '/reservation/flt' },
+        { label: 'FLT Theater', icon: 'theaters',          link: '/reservation/flt' },
+        { label: 'Gymnasium',   icon: 'sports_gymnastics', link: '/reservation/gymnasium' },
       ],
     },
   ];
 
   private static readonly FACILITIES_NAV: NavItem[] = [
-    { label: 'Dashboard', icon: 'grid_view', link: '/facilities/dashboard' },
-    { label: 'Users',     icon: 'group',     link: '/facilities/users' },
+    { label: 'Dashboard',  icon: 'grid_view',    link: '/facilities/dashboard' },
+    { label: 'Users',      icon: 'group',        link: '/facilities/users' },
+    { label: 'Equipments', icon: 'inventory_2',  link: '/facilities/equipments' },
     {
       label: 'Scheduling', icon: 'event_note', children: [
         { label: 'FLT Theater',    icon: 'theaters',          link: '/facilities/reservation/flt' },

@@ -8,27 +8,26 @@ import {
 } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { UiIcon } from '../../../shared/ui';
-import { FltStepper } from './flt-stepper';
-import { FltReservationService } from './flt-reservation.service';
-import { FltApprovedEvent, FltEquipmentItem, ReservedDateSlot, TIME_SLOTS } from './flt-reservation.models';
+import { GymnasiumStepper } from './gymnasium-stepper';
+import { GymReservationService } from './gymnasium-reservation.service';
+import { GymApprovedEvent, GymEquipmentItem, ReservedDateSlot, TIME_SLOTS } from './gymnasium-reservation.models';
 import { MaintenanceBlock, MaintenanceService } from '../../admin/maintenance/maintenance.service';
 
 type View = 'calendar' | 'timeslots' | 'form';
 
 const WEEKDAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-const DAYS_PER_WEEK = 7;
 
 interface CalendarCell {
   day: number | null;
   dateStr: string | null;
   isToday: boolean;
   isPast: boolean;
-  events: FltApprovedEvent[];
+  events: GymApprovedEvent[];
 }
 
 @Component({
-  selector: 'app-flt-reservation',
-  imports: [RouterLink, UiIcon, FltStepper],
+  selector: 'app-gymnasium-reservation',
+  imports: [RouterLink, UiIcon, GymnasiumStepper],
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: {
     class: 'flex flex-col min-h-screen bg-gray-50 dark:bg-zinc-900',
@@ -37,33 +36,25 @@ interface CalendarCell {
     <!-- ─── VIEW 1: Full-screen Calendar ─── -->
     @if (view() === 'calendar') {
       <div class="flex flex-col min-h-screen">
-
         <!-- Header -->
         <div class="bg-primary bg-[linear-gradient(135deg,#7a2342,#5f1830_55%,#8d2546)] text-white shadow-lg shrink-0">
           <div class="max-w-screen-2xl mx-auto px-4 sm:px-6 py-4 flex flex-col sm:flex-row sm:items-center gap-3">
             <div class="flex items-center gap-3 flex-1">
               <img src="/logo.svg" alt="LPU Logo" class="w-10 h-10 shrink-0 object-contain drop-shadow" />
               <div>
-                <h1 class="text-xl sm:text-2xl font-black tracking-tight leading-tight">FLT Theater</h1>
-                <p class="text-white/60 text-xs">Faculty Learning and Training Facility</p>
+                <h1 class="text-xl sm:text-2xl font-black tracking-tight leading-tight">Gymnasium</h1>
+                <p class="text-white/60 text-xs">LPU Laguna Gymnasium Reservation</p>
               </div>
             </div>
             <div class="flex items-center gap-3">
-              <!-- Month navigator -->
               <div class="flex items-center gap-1 bg-white/10 rounded-xl p-1">
-                <button
-                  type="button"
-                  (click)="prevMonth()"
-                  class="flex h-8 w-8 cursor-pointer items-center justify-center rounded-lg hover:bg-white/20 transition-colors"
-                >
+                <button type="button" (click)="prevMonth()"
+                  class="flex h-8 w-8 cursor-pointer items-center justify-center rounded-lg hover:bg-white/20 transition-colors">
                   <ui-icon name="chevron_left" class="text-xl" />
                 </button>
                 <span class="px-3 text-sm font-bold min-w-32 text-center">{{ monthLabel() }}</span>
-                <button
-                  type="button"
-                  (click)="nextMonth()"
-                  class="flex h-8 w-8 cursor-pointer items-center justify-center rounded-lg hover:bg-white/20 transition-colors"
-                >
+                <button type="button" (click)="nextMonth()"
+                  class="flex h-8 w-8 cursor-pointer items-center justify-center rounded-lg hover:bg-white/20 transition-colors">
                   <ui-icon name="chevron_right" class="text-xl" />
                 </button>
               </div>
@@ -84,13 +75,11 @@ interface CalendarCell {
             </div>
           } @else {
             <div class="flex-1 flex flex-col overflow-hidden rounded-xl ring-1 ring-black/5 dark:ring-white/10 shadow-sm bg-white dark:bg-zinc-900">
-              <!-- Day-of-week header -->
               <div class="grid grid-cols-7 bg-primary text-center text-sm font-bold text-white shrink-0">
                 @for (wd of weekdays; track wd) {
                   <div class="border-r border-white/30 px-1 py-2.5 last:border-r-0 text-xs sm:text-sm">{{ wd }}</div>
                 }
               </div>
-              <!-- Day cells -->
               <div class="flex-1 grid grid-cols-7 overflow-auto" [style.grid-template-rows]="calendarRows()">
                 @for (cell of calendarCells(); track ($index)) {
                   <div
@@ -202,7 +191,7 @@ interface CalendarCell {
           }
         </div>
 
-        <!-- Basket bar (bottom) -->
+        <!-- Basket bar -->
         @if (basket().length > 0) {
           <div class="shrink-0 border-t border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 shadow-lg px-4 sm:px-6 py-3">
             <div class="max-w-screen-2xl mx-auto flex flex-col sm:flex-row sm:items-center gap-3">
@@ -217,11 +206,8 @@ interface CalendarCell {
                   </div>
                 }
               </div>
-              <button
-                type="button"
-                (click)="goToForm()"
-                class="shrink-0 flex items-center gap-2 rounded-xl bg-primary px-5 py-2.5 text-sm font-bold text-white hover:bg-primary/90 transition-colors cursor-pointer shadow-sm"
-              >
+              <button type="button" (click)="goToForm()"
+                class="shrink-0 flex items-center gap-2 rounded-xl bg-primary px-5 py-2.5 text-sm font-bold text-white hover:bg-primary/90 transition-colors cursor-pointer shadow-sm">
                 Continue to Form
                 <ui-icon name="arrow_forward" class="text-base" />
               </button>
@@ -234,32 +220,25 @@ interface CalendarCell {
     <!-- ─── VIEW 2: Day Time Slots ─── -->
     @if (view() === 'timeslots') {
       <div class="flex flex-col min-h-screen">
-
-        <!-- Header -->
         <div class="bg-primary bg-[linear-gradient(135deg,#7a2342,#5f1830_55%,#8d2546)] text-white shadow-lg shrink-0">
           <div class="max-w-screen-2xl mx-auto px-4 sm:px-6 py-4 flex items-center gap-4">
-            <button
-              type="button"
-              (click)="view.set('calendar')"
-              class="flex items-center gap-1.5 text-white/70 hover:text-white transition-colors cursor-pointer text-sm"
-            >
+            <button type="button" (click)="view.set('calendar')"
+              class="flex items-center gap-1.5 text-white/70 hover:text-white transition-colors cursor-pointer text-sm">
               <ui-icon name="arrow_back" class="text-xl" />
               Calendar
             </button>
             <div class="flex-1 text-center">
               <h2 class="text-lg sm:text-xl font-black tracking-tight">{{ formatDateLong(selectedDay()) }}</h2>
-              <p class="text-white/60 text-xs">FLT Theater — Select your time slot</p>
+              <p class="text-white/60 text-xs">Gymnasium — Select your time slot</p>
             </div>
             <div class="w-24"></div>
           </div>
         </div>
 
-        <!-- Time slots -->
         <div class="flex-1 max-w-screen-md mx-auto w-full px-4 sm:px-6 py-6 flex flex-col gap-4">
           <div class="rounded-xl overflow-hidden ring-1 ring-black/5 dark:ring-white/10 shadow-sm bg-white dark:bg-zinc-900">
             @for (slot of timeSlots; track slot.value) {
               @if (getMaintenanceSlot(slot.value); as mb) {
-                <!-- Under Maintenance slot -->
                 <div class="flex items-stretch border-b border-gray-100 dark:border-zinc-800 last:border-b-0">
                   <div class="w-20 sm:w-24 shrink-0 flex items-center justify-end pr-3 py-3 text-xs font-semibold text-gray-400 dark:text-zinc-500 border-r border-gray-100 dark:border-zinc-800">
                     {{ slot.label }}
@@ -273,44 +252,34 @@ interface CalendarCell {
                   </div>
                 </div>
               } @else if (getSlotEvent(slot.value); as ev) {
-                <!-- Booked slot -->
                 <div class="flex items-stretch border-b border-gray-100 dark:border-zinc-800 last:border-b-0">
                   <div class="w-20 sm:w-24 shrink-0 flex items-center justify-end pr-3 py-3 text-xs font-semibold text-gray-400 dark:text-zinc-500 border-r border-gray-100 dark:border-zinc-800">
                     {{ slot.label }}
                   </div>
-                  <div
-                    class="flex-1 px-3 py-2.5 flex items-center gap-2"
+                  <div class="flex-1 px-3 py-2.5 flex items-center gap-2"
                     [class.bg-sky-50]="ev.eventKind !== 'COORDINATION'"
                     [class.dark:bg-sky-950/40]="ev.eventKind !== 'COORDINATION'"
                     [class.bg-amber-50]="ev.eventKind === 'COORDINATION'"
-                    [class.dark:bg-amber-950/40]="ev.eventKind === 'COORDINATION'"
-                  >
+                    [class.dark:bg-amber-950/40]="ev.eventKind === 'COORDINATION'">
                     <div class="flex-1 min-w-0">
-                      <p
-                        class="text-xs font-bold truncate"
+                      <p class="text-xs font-bold truncate"
                         [class.text-sky-700]="ev.eventKind !== 'COORDINATION'"
                         [class.dark:text-sky-300]="ev.eventKind !== 'COORDINATION'"
                         [class.text-amber-700]="ev.eventKind === 'COORDINATION'"
                         [class.dark:text-amber-300]="ev.eventKind === 'COORDINATION'"
                       >{{ ev.eventKind === 'COORDINATION' ? '📋 Coordination Meeting' : ev.department }}</p>
-                      <p
-                        class="text-[10px]"
+                      <p class="text-[10px]"
                         [class.text-sky-500]="ev.eventKind !== 'COORDINATION'"
-                        [class.dark:text-sky-400]="ev.eventKind !== 'COORDINATION'"
                         [class.text-amber-500]="ev.eventKind === 'COORDINATION'"
-                        [class.dark:text-amber-400]="ev.eventKind === 'COORDINATION'"
                       >{{ ev.startTime }} – {{ ev.endTime }} · {{ ev.eventKind === 'COORDINATION' ? 'Blocked' : 'Reserved' }}</p>
                     </div>
-                    <ui-icon
-                      [name]="ev.eventKind === 'COORDINATION' ? 'handshake' : 'lock'"
+                    <ui-icon [name]="ev.eventKind === 'COORDINATION' ? 'handshake' : 'lock'"
                       class="text-sm shrink-0"
                       [class.text-sky-400]="ev.eventKind !== 'COORDINATION'"
-                      [class.text-amber-400]="ev.eventKind === 'COORDINATION'"
-                    />
+                      [class.text-amber-400]="ev.eventKind === 'COORDINATION'" />
                   </div>
                 </div>
               } @else if (isSlotInBasket(slot.value)) {
-                <!-- Already in basket -->
                 <div class="flex items-stretch border-b border-gray-100 dark:border-zinc-800 last:border-b-0">
                   <div class="w-20 sm:w-24 shrink-0 flex items-center justify-end pr-3 py-3 text-xs font-semibold text-gray-400 dark:text-zinc-500 border-r border-gray-100 dark:border-zinc-800">
                     {{ slot.label }}
@@ -321,14 +290,11 @@ interface CalendarCell {
                   </div>
                 </div>
               } @else {
-                <!-- Available slot -->
-                <div
-                  class="flex items-stretch border-b border-gray-100 dark:border-zinc-800 last:border-b-0 cursor-pointer group"
+                <div class="flex items-stretch border-b border-gray-100 dark:border-zinc-800 last:border-b-0 cursor-pointer group"
                   [class.ring-2]="isSlotSelected(slot.value)"
                   [class.ring-primary]="isSlotSelected(slot.value)"
                   [class.bg-primary/5]="isSlotSelected(slot.value)"
-                  (click)="toggleTimeSlot(slot.value)"
-                >
+                  (click)="toggleTimeSlot(slot.value)">
                   <div class="w-20 sm:w-24 shrink-0 flex items-center justify-end pr-3 py-3 text-xs font-semibold text-gray-400 dark:text-zinc-500 border-r border-gray-100 dark:border-zinc-800">
                     {{ slot.label }}
                   </div>
@@ -345,7 +311,6 @@ interface CalendarCell {
             }
           </div>
 
-          <!-- Time selection error -->
           @if (timeSlotError()) {
             <p class="text-sm text-red-500 flex items-center gap-1.5">
               <ui-icon name="warning" class="text-base" />
@@ -353,22 +318,14 @@ interface CalendarCell {
             </p>
           }
 
-          <!-- Add Date button -->
           <div class="flex gap-3 mt-2">
-            <button
-              type="button"
-              (click)="view.set('calendar')"
-              class="flex-1 flex items-center justify-center gap-2 rounded-xl border border-gray-300 dark:border-zinc-600 px-4 py-3 text-sm font-semibold text-gray-700 dark:text-zinc-300 hover:bg-gray-50 dark:hover:bg-zinc-800 transition-colors cursor-pointer"
-            >
+            <button type="button" (click)="view.set('calendar')"
+              class="flex-1 flex items-center justify-center gap-2 rounded-xl border border-gray-300 dark:border-zinc-600 px-4 py-3 text-sm font-semibold text-gray-700 dark:text-zinc-300 hover:bg-gray-50 dark:hover:bg-zinc-800 transition-colors cursor-pointer">
               <ui-icon name="arrow_back" class="text-base" />
               Back to Calendar
             </button>
-            <button
-              type="button"
-              (click)="addToBasket()"
-              [disabled]="selectedTimeStart() === null"
-              class="flex-1 flex items-center justify-center gap-2 rounded-xl bg-primary px-4 py-3 text-sm font-bold text-white hover:bg-primary/90 transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed shadow-sm"
-            >
+            <button type="button" (click)="addToBasket()" [disabled]="selectedTimeStart() === null"
+              class="flex-1 flex items-center justify-center gap-2 rounded-xl bg-primary px-4 py-3 text-sm font-bold text-white hover:bg-primary/90 transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed shadow-sm">
               <ui-icon name="add" class="text-base" />
               Add This Date
             </button>
@@ -387,11 +344,8 @@ interface CalendarCell {
                   </div>
                 }
               </div>
-              <button
-                type="button"
-                (click)="goToForm()"
-                class="w-full flex items-center justify-center gap-2 rounded-xl bg-primary px-4 py-3 text-sm font-bold text-white hover:bg-primary/90 transition-colors cursor-pointer shadow-sm"
-              >
+              <button type="button" (click)="goToForm()"
+                class="w-full flex items-center justify-center gap-2 rounded-xl bg-primary px-4 py-3 text-sm font-bold text-white hover:bg-primary/90 transition-colors cursor-pointer shadow-sm">
                 Continue to Form
                 <ui-icon name="arrow_forward" class="text-base" />
               </button>
@@ -404,15 +358,11 @@ interface CalendarCell {
     <!-- ─── VIEW 3: Stepper Form ─── -->
     @if (view() === 'form') {
       <div class="flex flex-col min-h-screen md:h-screen md:min-h-0">
-        <!-- Thin maroon top bar -->
         <div class="bg-primary bg-[linear-gradient(135deg,#7a2342,#5f1830_55%,#8d2546)] text-white shrink-0 px-4 sm:px-6 py-3 flex items-center gap-4 shadow">
           <img src="/logo.svg" alt="LPU Logo" class="w-8 h-8 object-contain drop-shadow" />
-          <span class="font-bold text-sm tracking-wide">FLT Theater — Reservation Form</span>
-          <button
-            type="button"
-            (click)="view.set('calendar')"
-            class="ml-auto flex items-center gap-1.5 text-white/70 hover:text-white text-xs transition-colors cursor-pointer"
-          >
+          <span class="font-bold text-sm tracking-wide">Gymnasium — Reservation Form</span>
+          <button type="button" (click)="view.set('calendar')"
+            class="ml-auto flex items-center gap-1.5 text-white/70 hover:text-white text-xs transition-colors cursor-pointer">
             <ui-icon name="calendar_month" class="text-base" />
             Change Dates
           </button>
@@ -423,7 +373,7 @@ interface CalendarCell {
               <ui-icon name="autorenew" class="text-3xl animate-spin" />
             </div>
           } @else {
-            <app-flt-stepper
+            <app-gymnasium-stepper
               [selectedDates]="basket()"
               [availableEquipment]="availableEquipment()"
               [equipmentLoading]="equipmentLoading()"
@@ -435,21 +385,21 @@ interface CalendarCell {
     }
   `,
 })
-export class FltReservation implements OnInit {
-  private readonly service = inject(FltReservationService);
+export class GymnasiumReservation implements OnInit {
+  private readonly service = inject(GymReservationService);
   private readonly maintSvc = inject(MaintenanceService);
 
   readonly view = signal<View>('calendar');
   readonly loadingEvents = signal(true);
   readonly equipmentLoading = signal(true);
 
-  readonly approvedEvents = signal<FltApprovedEvent[]>([]);
-  readonly availableEquipment = signal<FltEquipmentItem[]>([]);
+  readonly approvedEvents = signal<GymApprovedEvent[]>([]);
+  readonly availableEquipment = signal<GymEquipmentItem[]>([]);
   readonly basket = signal<ReservedDateSlot[]>([]);
   readonly maintenanceBlocks = signal<MaintenanceBlock[]>([]);
 
   readonly activeYear = signal(new Date().getFullYear());
-  readonly activeMonth = signal(new Date().getMonth()); // 0-indexed
+  readonly activeMonth = signal(new Date().getMonth());
 
   readonly selectedDay = signal<string | null>(null);
   readonly selectedTimeStart = signal<number | null>(null);
@@ -471,7 +421,6 @@ export class FltReservation implements OnInit {
     today.setHours(0, 0, 0, 0);
     const todayStr = this.formatDate(today);
 
-    // Earliest bookable date: today + 14 days
     const minBookable = new Date(today);
     minBookable.setDate(minBookable.getDate() + 14);
     const minBookableStr = this.formatDate(minBookable);
@@ -489,7 +438,6 @@ export class FltReservation implements OnInit {
       }
       const day = dayOffset + 1;
       const dateStr = this.formatDate(new Date(year, month, day));
-      // "isPast" here means not bookable — includes today through today+13
       const isPast = dateStr < minBookableStr;
       return {
         day,
@@ -523,28 +471,20 @@ export class FltReservation implements OnInit {
       error: () => this.equipmentLoading.set(false),
     });
 
-    this.maintSvc.getPublicBlocks('FLT').subscribe({
+    this.maintSvc.getPublicBlocks('GYMNASIUM').subscribe({
       next: (res) => { if (res.success) this.maintenanceBlocks.set(res.blocks ?? []); },
       error: () => {},
     });
   }
 
   prevMonth(): void {
-    if (this.activeMonth() === 0) {
-      this.activeMonth.set(11);
-      this.activeYear.update(y => y - 1);
-    } else {
-      this.activeMonth.update(m => m - 1);
-    }
+    if (this.activeMonth() === 0) { this.activeMonth.set(11); this.activeYear.update(y => y - 1); }
+    else { this.activeMonth.update(m => m - 1); }
   }
 
   nextMonth(): void {
-    if (this.activeMonth() === 11) {
-      this.activeMonth.set(0);
-      this.activeYear.update(y => y + 1);
-    } else {
-      this.activeMonth.update(m => m + 1);
-    }
+    if (this.activeMonth() === 11) { this.activeMonth.set(0); this.activeYear.update(y => y + 1); }
+    else { this.activeMonth.update(m => m + 1); }
   }
 
   selectDay(dateStr: string): void {
@@ -555,8 +495,7 @@ export class FltReservation implements OnInit {
     this.view.set('timeslots');
   }
 
-  /** Returns the approved event that occupies a given hour on the selected day, or null */
-  getSlotEvent(hourStr: string): FltApprovedEvent | null {
+  getSlotEvent(hourStr: string): GymApprovedEvent | null {
     const day = this.selectedDay();
     if (!day) return null;
     const hour = parseInt(hourStr, 10);
@@ -568,7 +507,6 @@ export class FltReservation implements OnInit {
     }) ?? null;
   }
 
-  /** Returns the maintenance block that occupies a given hour on the selected day, or null */
   getMaintenanceSlot(hourStr: string): MaintenanceBlock | null {
     const day = this.selectedDay();
     if (!day) return null;
@@ -581,7 +519,6 @@ export class FltReservation implements OnInit {
     }) ?? null;
   }
 
-  /** Whether a given date has any maintenance block */
   dateHasMaintenance(dateStr: string): boolean {
     return this.maintenanceBlocks().some(b => b.blockDate === dateStr);
   }
@@ -618,11 +555,9 @@ export class FltReservation implements OnInit {
       return;
     }
 
-    // Second click: set end
     const lo = Math.min(start, hour);
     const hi = Math.max(start, hour) + 1;
 
-    // Check that no booked slot falls in [lo, hi)
     const day = this.selectedDay()!;
     const hasConflict = this.approvedEvents().some(ev => {
       if (ev.date !== day) return false;

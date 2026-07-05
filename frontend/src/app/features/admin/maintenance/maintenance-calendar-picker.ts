@@ -7,13 +7,32 @@ import {
   computed,
   signal,
 } from '@angular/core';
-import { UiIcon } from '../../../../shared/ui';
-import { RescheduleEvent } from './flt-reschedule-calendar';
+import { FormsModule } from '@angular/forms';
+import { UiIcon } from '../../../shared/ui';
 
-export interface CoordinationSlot {
+export interface MaintenanceSlot {
   date: string;
   startTime: string;
   endTime: string;
+  reason: string;
+}
+
+export interface ExistingBlock {
+  id: number;
+  blockDate: string;
+  startTime: string;
+  endTime: string;
+  reason: string;
+}
+
+/** Approved reservations / coordination meetings to show on the calendar */
+export interface ScheduledEvent {
+  date: string;
+  startTime: string;
+  endTime: string;
+  department: string;
+  organization: string;
+  eventKind: 'RESERVATION' | 'COORDINATION';
 }
 
 interface CalendarCell {
@@ -21,7 +40,8 @@ interface CalendarCell {
   dateStr: string | null;
   isToday: boolean;
   isPast: boolean;
-  events: RescheduleEvent[];
+  events: ScheduledEvent[];
+  blocks: ExistingBlock[];
 }
 
 const WEEKDAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
@@ -36,15 +56,14 @@ const TIME_SLOTS = Array.from({ length: 15 }, (_, i) => {
 type PickerView = 'calendar' | 'timeslots';
 
 @Component({
-  selector: 'app-flt-coordination-calendar',
-  imports: [UiIcon],
+  selector: 'app-maintenance-calendar-picker',
+  imports: [UiIcon, FormsModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <!-- Full-screen overlay -->
-    <div class="fixed inset-0 z-50 flex flex-col bg-gray-50 dark:bg-zinc-900">
+    <div class="fixed inset-0 z-[60] flex flex-col bg-gray-50 dark:bg-zinc-900">
 
       <!-- Header -->
-      <div class="bg-amber-600 bg-[linear-gradient(135deg,#b45309,#92400e_55%,#d97706)] text-white shadow-lg shrink-0">
+      <div class="bg-orange-600 bg-[linear-gradient(135deg,#c2410c,#9a3412_55%,#ea580c)] text-white shadow-lg shrink-0">
         <div class="max-w-screen-2xl mx-auto px-4 sm:px-6 py-4 flex flex-col sm:flex-row sm:items-center gap-3">
           <div class="flex items-center gap-3 flex-1">
             <button type="button" (click)="cancelled.emit()"
@@ -52,8 +71,11 @@ type PickerView = 'calendar' | 'timeslots';
               <ui-icon name="arrow_back" class="text-xl" />
             </button>
             <div>
-              <h1 class="text-lg sm:text-xl font-black tracking-tight leading-tight">Set Coordination Meeting</h1>
-              <p class="text-white/70 text-xs">{{ eventTitle }} — pick a date and time for the pre-event coordination</p>
+              <h1 class="text-lg sm:text-xl font-black tracking-tight leading-tight flex items-center gap-2">
+                <ui-icon name="construction" class="text-xl" />
+                Maintenance Blocks — {{ facilityLabel }}
+              </h1>
+              <p class="text-white/70 text-xs">Select a date and time range to block on the customer calendar</p>
             </div>
           </div>
           <div class="flex items-center gap-3">
@@ -76,6 +98,9 @@ type PickerView = 'calendar' | 'timeslots';
                 Calendar
               </button>
             }
+            <div class="text-white/60 text-xs">
+              {{ existingBlocks.length }} block{{ existingBlocks.length === 1 ? '' : 's' }}
+            </div>
           </div>
         </div>
       </div>
@@ -84,11 +109,12 @@ type PickerView = 'calendar' | 'timeslots';
       @if (pickerView() === 'calendar') {
         <div class="flex-1 flex flex-col max-w-screen-2xl w-full mx-auto px-4 sm:px-6 py-4 gap-3 overflow-auto">
           <div class="flex-1 flex flex-col overflow-hidden rounded-xl ring-1 ring-black/5 dark:ring-white/10 shadow-sm bg-white dark:bg-zinc-900">
-            <div class="grid grid-cols-7 bg-amber-600 text-center text-sm font-bold text-white shrink-0">
+            <div class="grid grid-cols-7 bg-orange-600 text-center text-sm font-bold text-white shrink-0">
               @for (wd of weekdays; track wd) {
                 <div class="border-r border-white/30 px-1 py-2.5 last:border-r-0 text-xs sm:text-sm">{{ wd }}</div>
               }
             </div>
+
             <div class="flex-1 grid grid-cols-7 overflow-auto" [style.grid-template-rows]="calendarRows()">
               @for (cell of calendarCells(); track $index) {
                 <div
@@ -97,53 +123,81 @@ type PickerView = 'calendar' | 'timeslots';
                   [class.dark:bg-zinc-900]="cell.day !== null && !cell.isToday"
                   [class.bg-gray-100]="cell.day === null"
                   [class.dark:bg-zinc-800/40]="cell.day === null"
-                  [class.bg-amber-50]="cell.isToday"
+                  [class.bg-orange-50]="cell.isToday"
                   [class.cursor-pointer]="cell.day !== null && !cell.isPast"
-                  [class.hover:bg-amber-50]="cell.day !== null && !cell.isPast && !cell.isToday"
+                  [class.hover:bg-orange-50]="cell.day !== null && !cell.isPast && !cell.isToday"
                   [class.dark:hover:bg-zinc-800]="cell.day !== null && !cell.isPast && !cell.isToday"
-                  [class.ring-2]="cell.dateStr === selectedSlot()?.date"
-                  [class.ring-amber-500]="cell.dateStr === selectedSlot()?.date"
+                  [class.ring-2]="cell.dateStr === pendingSlot()?.date"
+                  [class.ring-orange-500]="cell.dateStr === pendingSlot()?.date"
                   [class.opacity-40]="cell.isPast"
                   (click)="cell.day !== null && !cell.isPast ? selectDay(cell.dateStr!) : null"
                 >
                   @if (cell.day !== null) {
                     <span
                       class="mx-auto flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-xs sm:text-sm font-semibold mb-1"
-                      [class.bg-amber-500]="cell.isToday"
+                      [class.bg-orange-500]="cell.isToday"
                       [class.text-white]="cell.isToday"
                       [class.text-gray-700]="!cell.isToday"
                       [class.dark:text-zinc-300]="!cell.isToday"
                     >{{ cell.day }}</span>
+
+                    <!-- Approved events (reservations & coordination) -->
                     @if (cell.events.length > 0) {
                       <ul class="flex flex-col gap-0.5 overflow-hidden">
-                        @for (ev of cell.events.slice(0, 3); track ev.department + ev.startTime) {
+                        @for (ev of cell.events.slice(0, 2); track ev.department + ev.startTime) {
                           <li
                             class="min-w-0 rounded border-l-2 px-1 py-0.5 text-[10px] leading-tight"
-                            [class.border-sky-500]="ev.eventKind !== 'COORDINATION'"
-                            [class.bg-sky-50]="ev.eventKind !== 'COORDINATION'"
-                            [class.dark:bg-sky-950/50]="ev.eventKind !== 'COORDINATION'"
+                            [class.border-sky-500]="ev.eventKind === 'RESERVATION'"
+                            [class.bg-sky-50]="ev.eventKind === 'RESERVATION'"
+                            [class.dark:bg-sky-950/50]="ev.eventKind === 'RESERVATION'"
                             [class.border-amber-500]="ev.eventKind === 'COORDINATION'"
                             [class.bg-amber-50]="ev.eventKind === 'COORDINATION'"
                             [class.dark:bg-amber-950/50]="ev.eventKind === 'COORDINATION'"
                           >
                             <span
                               class="block truncate font-bold"
-                              [class.text-sky-700]="ev.eventKind !== 'COORDINATION'"
-                              [class.dark:text-sky-300]="ev.eventKind !== 'COORDINATION'"
+                              [class.text-sky-700]="ev.eventKind === 'RESERVATION'"
+                              [class.dark:text-sky-300]="ev.eventKind === 'RESERVATION'"
                               [class.text-amber-700]="ev.eventKind === 'COORDINATION'"
                               [class.dark:text-amber-300]="ev.eventKind === 'COORDINATION'"
                             >{{ ev.startTime }}–{{ ev.endTime }}</span>
                             <span
                               class="block truncate"
-                              [class.text-sky-900]="ev.eventKind !== 'COORDINATION'"
-                              [class.dark:text-sky-200]="ev.eventKind !== 'COORDINATION'"
+                              [class.text-sky-900]="ev.eventKind === 'RESERVATION'"
+                              [class.dark:text-sky-200]="ev.eventKind === 'RESERVATION'"
                               [class.text-amber-900]="ev.eventKind === 'COORDINATION'"
                               [class.dark:text-amber-200]="ev.eventKind === 'COORDINATION'"
                             >{{ ev.eventKind === 'COORDINATION' ? '📋 Coordination' : ev.department }}</span>
                           </li>
                         }
-                        @if (cell.events.length > 3) {
-                          <li class="text-[10px] font-bold text-amber-600 pl-1">+{{ cell.events.length - 3 }} more</li>
+                        @if (cell.events.length > 2) {
+                          <li class="text-[10px] font-bold text-sky-600 pl-1">+{{ cell.events.length - 2 }} more</li>
+                        }
+                      </ul>
+                    }
+
+                    <!-- Maintenance blocks with inline remove -->
+                    @if (cell.blocks.length > 0) {
+                      <ul class="flex flex-col gap-0.5 overflow-hidden mt-0.5">
+                        @for (b of cell.blocks.slice(0, 2); track b.id) {
+                          <li class="min-w-0 rounded border-l-2 border-orange-500 bg-orange-50 dark:bg-orange-950/50 px-1 py-0.5 text-[10px] leading-tight flex items-center gap-1">
+                            <span class="flex-1 min-w-0">
+                              <span class="block truncate font-bold text-orange-700 dark:text-orange-300">{{ b.startTime }}–{{ b.endTime }}</span>
+                              <span class="block truncate text-orange-600 dark:text-orange-400">🔧 {{ b.reason || 'Maintenance' }}</span>
+                            </span>
+                            <button type="button"
+                              (click)="$event.stopPropagation(); removeSlot.emit(b.id)"
+                              class="shrink-0 h-4 w-4 flex items-center justify-center rounded hover:bg-red-100 dark:hover:bg-red-900/40 text-orange-500 hover:text-red-600 cursor-pointer transition-colors"
+                              title="Remove block">
+                              <ui-icon name="delete" class="text-[10px]" />
+                            </button>
+                          </li>
+                        }
+                        @if (cell.blocks.length > 2) {
+                          <li class="text-[10px] font-bold text-orange-600 pl-1 cursor-pointer hover:underline"
+                            (click)="$event.stopPropagation(); selectDay(cell.dateStr!)">
+                            +{{ cell.blocks.length - 2 }} more — click to manage
+                          </li>
                         }
                       </ul>
                     }
@@ -163,28 +217,33 @@ type PickerView = 'calendar' | 'timeslots';
               <span class="inline-block w-3 h-3 rounded border-l-2 border-amber-500 bg-amber-50"></span>
               Coordination Meeting
             </span>
-            <span class="ml-auto text-[11px] italic">Click a date to select the coordination time slot</span>
+            <span class="flex items-center gap-1.5">
+              <span class="inline-block w-3 h-3 rounded border-l-2 border-orange-500 bg-orange-50"></span>
+              Maintenance Block
+            </span>
+            <span class="ml-auto text-[11px] italic">Click any future date to add or manage maintenance blocks</span>
           </div>
 
-          <!-- Bottom bar: selected slot preview + save -->
-          @if (selectedSlot()) {
+          <!-- Bottom bar: pending slot + reason + save -->
+          @if (pendingSlot()) {
             <div class="shrink-0 border-t border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 shadow-lg px-4 sm:px-6 py-3">
               <div class="max-w-screen-2xl mx-auto flex flex-col sm:flex-row sm:items-center gap-3">
-                <div class="flex items-center gap-2 text-sm font-semibold text-amber-700 dark:text-amber-400">
-                  <ui-icon name="handshake" class="text-base text-amber-500" />
-                  {{ formatDateShort(selectedSlot()!.date) }} · {{ selectedSlot()!.startTime }}–{{ selectedSlot()!.endTime }}
+                <div class="flex items-center gap-2 text-sm font-semibold text-orange-700 dark:text-orange-400 shrink-0">
+                  <ui-icon name="construction" class="text-base text-orange-500" />
+                  {{ formatDateShort(pendingSlot()!.date) }} · {{ pendingSlot()!.startTime }}–{{ pendingSlot()!.endTime }}
                 </div>
-                <div class="flex gap-2 sm:ml-auto">
-                  <button type="button" (click)="selectedSlot.set(null)"
+                <input type="text" [(ngModel)]="pendingReason" placeholder="Reason (e.g. Under Maintenance)"
+                  class="flex-1 min-w-0 rounded-lg border border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-sm text-gray-900 dark:text-zinc-100 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-orange-500" />
+                <div class="flex gap-2 shrink-0">
+                  <button type="button" (click)="pendingSlot.set(null)"
                     class="rounded-lg border border-gray-200 dark:border-zinc-700 px-4 py-2 text-sm font-semibold text-gray-600 dark:text-zinc-300 hover:bg-gray-50 dark:hover:bg-zinc-800 cursor-pointer transition-colors">
                     Clear
                   </button>
-                  <button type="button" (click)="save()"
-                    [disabled]="saving()"
-                    class="flex items-center gap-1.5 rounded-lg bg-amber-500 hover:bg-amber-600 px-5 py-2 text-sm font-bold text-white cursor-pointer transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+                  <button type="button" (click)="saveBlock()" [disabled]="saving()"
+                    class="flex items-center gap-1.5 rounded-lg bg-orange-500 hover:bg-orange-600 px-5 py-2 text-sm font-bold text-white cursor-pointer transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
                     @if (saving()) { <ui-icon name="autorenew" class="text-base animate-spin" /> }
-                    @else { <ui-icon name="save" class="text-base" /> }
-                    Save Coordination
+                    @else { <ui-icon name="block" class="text-base" /> }
+                    Add Block
                   </button>
                 </div>
               </div>
@@ -197,38 +256,77 @@ type PickerView = 'calendar' | 'timeslots';
       @if (pickerView() === 'timeslots') {
         <div class="flex-1 min-h-0 overflow-auto max-w-screen-md mx-auto w-full px-4 sm:px-6 py-6 flex flex-col gap-4">
           <div class="flex items-center gap-2 shrink-0">
-            <ui-icon name="calendar_today" class="text-amber-600 text-base" />
+            <ui-icon name="calendar_today" class="text-orange-600 text-base" />
             <span class="text-sm font-bold text-gray-800 dark:text-zinc-100">{{ formatDateLong(selectedDay()) }}</span>
-            <span class="ml-auto text-xs text-gray-400 italic">Select start then end hour</span>
+            <span class="ml-auto text-xs text-gray-400 italic">Select start then end hour to block</span>
           </div>
 
+          <!-- Existing blocks on this date with remove buttons -->
+          @if (blocksOnSelectedDay().length > 0) {
+            <div class="rounded-xl border border-orange-200 dark:border-orange-800 bg-orange-50/60 dark:bg-orange-950/20 p-3 flex flex-col gap-2">
+              <p class="text-xs font-bold uppercase tracking-wide text-orange-600 dark:text-orange-400 flex items-center gap-1.5">
+                <ui-icon name="construction" class="text-sm" />
+                Existing Blocks on This Date
+              </p>
+              @for (b of blocksOnSelectedDay(); track b.id) {
+                <div class="flex items-center gap-3 rounded-lg bg-white dark:bg-zinc-900 border border-orange-200 dark:border-orange-800 px-3 py-2">
+                  <div class="flex-1 min-w-0">
+                    <p class="text-xs font-semibold text-orange-700 dark:text-orange-400">{{ b.startTime }} – {{ b.endTime }}</p>
+                    <p class="text-[11px] text-orange-500 dark:text-orange-500 truncate">{{ b.reason || 'Under Maintenance' }}</p>
+                  </div>
+                  <button type="button" (click)="removeSlot.emit(b.id)"
+                    class="flex items-center gap-1 rounded-lg bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-800 px-2.5 py-1.5 text-xs font-semibold text-red-600 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-900/40 transition-colors cursor-pointer">
+                    <ui-icon name="delete" class="text-sm" />
+                    Remove
+                  </button>
+                </div>
+              }
+            </div>
+          }
+
+          <!-- Time slots -->
           <div class="rounded-xl overflow-hidden ring-1 ring-black/5 dark:ring-white/10 shadow-sm bg-white dark:bg-zinc-900">
             @for (slot of timeSlots; track slot.value) {
-              @if (getSlotEvent(slot.value); as ev) {
-                <!-- Booked slot -->
+              @if (getBlockForSlot(slot.value); as mb) {
+                <!-- Existing maintenance block -->
                 <div class="flex items-stretch border-b border-gray-100 dark:border-zinc-800 last:border-b-0">
                   <div class="w-20 sm:w-24 shrink-0 flex items-center justify-end pr-3 py-3 text-xs font-semibold text-gray-400 dark:text-zinc-500 border-r border-gray-100 dark:border-zinc-800">
                     {{ slot.label }}
                   </div>
-                  <div
-                    class="flex-1 px-3 py-2.5 flex items-center gap-2"
-                    [class.bg-sky-50]="ev.eventKind !== 'COORDINATION'"
-                    [class.dark:bg-sky-950/40]="ev.eventKind !== 'COORDINATION'"
+                  <div class="flex-1 px-3 py-2.5 bg-orange-50 dark:bg-orange-950/40 flex items-center gap-2">
+                    <div class="flex-1 min-w-0">
+                      <p class="text-xs font-bold text-orange-700 dark:text-orange-300 truncate">🔧 {{ mb.reason || 'Under Maintenance' }}</p>
+                      <p class="text-[10px] text-orange-500 dark:text-orange-400">{{ mb.startTime }} – {{ mb.endTime }} · Blocked</p>
+                    </div>
+                    <button type="button" (click)="removeSlot.emit(mb.id)"
+                      class="flex items-center gap-1 rounded-md bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-800 px-2 py-1 text-[10px] font-bold text-red-600 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-900/40 transition-colors cursor-pointer shrink-0">
+                      <ui-icon name="delete" class="text-xs" />
+                      Remove
+                    </button>
+                  </div>
+                </div>
+              } @else if (getEventForSlot(slot.value); as ev) {
+                <!-- Approved reservation or coordination — not selectable -->
+                <div class="flex items-stretch border-b border-gray-100 dark:border-zinc-800 last:border-b-0">
+                  <div class="w-20 sm:w-24 shrink-0 flex items-center justify-end pr-3 py-3 text-xs font-semibold text-gray-400 dark:text-zinc-500 border-r border-gray-100 dark:border-zinc-800">
+                    {{ slot.label }}
+                  </div>
+                  <div class="flex-1 px-3 py-2.5 flex items-center gap-2"
+                    [class.bg-sky-50]="ev.eventKind === 'RESERVATION'"
+                    [class.dark:bg-sky-950/40]="ev.eventKind === 'RESERVATION'"
                     [class.bg-amber-50]="ev.eventKind === 'COORDINATION'"
                     [class.dark:bg-amber-950/40]="ev.eventKind === 'COORDINATION'"
                   >
                     <div class="flex-1 min-w-0">
-                      <p
-                        class="text-xs font-bold truncate"
-                        [class.text-sky-700]="ev.eventKind !== 'COORDINATION'"
-                        [class.dark:text-sky-300]="ev.eventKind !== 'COORDINATION'"
+                      <p class="text-xs font-bold truncate"
+                        [class.text-sky-700]="ev.eventKind === 'RESERVATION'"
+                        [class.dark:text-sky-300]="ev.eventKind === 'RESERVATION'"
                         [class.text-amber-700]="ev.eventKind === 'COORDINATION'"
                         [class.dark:text-amber-300]="ev.eventKind === 'COORDINATION'"
                       >{{ ev.eventKind === 'COORDINATION' ? '📋 Coordination Meeting' : ev.department }}</p>
-                      <p
-                        class="text-[10px]"
-                        [class.text-sky-500]="ev.eventKind !== 'COORDINATION'"
-                        [class.dark:text-sky-400]="ev.eventKind !== 'COORDINATION'"
+                      <p class="text-[10px]"
+                        [class.text-sky-500]="ev.eventKind === 'RESERVATION'"
+                        [class.dark:text-sky-400]="ev.eventKind === 'RESERVATION'"
                         [class.text-amber-500]="ev.eventKind === 'COORDINATION'"
                         [class.dark:text-amber-400]="ev.eventKind === 'COORDINATION'"
                       >{{ ev.startTime }} – {{ ev.endTime }} · {{ ev.eventKind === 'COORDINATION' ? 'Blocked' : 'Reserved' }}</p>
@@ -236,30 +334,30 @@ type PickerView = 'calendar' | 'timeslots';
                     <ui-icon
                       [name]="ev.eventKind === 'COORDINATION' ? 'handshake' : 'lock'"
                       class="text-sm shrink-0"
-                      [class.text-sky-400]="ev.eventKind !== 'COORDINATION'"
+                      [class.text-sky-400]="ev.eventKind === 'RESERVATION'"
                       [class.text-amber-400]="ev.eventKind === 'COORDINATION'"
                     />
                   </div>
                 </div>
               } @else {
-                <!-- Available -->
+                <!-- Available — selectable -->
                 <div
                   class="flex items-stretch border-b border-gray-100 dark:border-zinc-800 last:border-b-0 cursor-pointer group"
                   [class.ring-2]="isHourInSelection(slot.value)"
-                  [class.ring-amber-500]="isHourInSelection(slot.value)"
-                  [class.bg-amber-50]="isHourInSelection(slot.value)"
-                  [class.dark:bg-amber-950/20]="isHourInSelection(slot.value)"
+                  [class.ring-orange-500]="isHourInSelection(slot.value)"
+                  [class.bg-orange-50]="isHourInSelection(slot.value)"
+                  [class.dark:bg-orange-950/20]="isHourInSelection(slot.value)"
                   (click)="toggleHour(slot.value)"
                 >
                   <div class="w-20 sm:w-24 shrink-0 flex items-center justify-end pr-3 py-3 text-xs font-semibold text-gray-400 dark:text-zinc-500 border-r border-gray-100 dark:border-zinc-800">
                     {{ slot.label }}
                   </div>
-                  <div class="flex-1 px-3 py-2.5 flex items-center gap-2 group-hover:bg-amber-50 dark:group-hover:bg-amber-950/20 transition-colors">
+                  <div class="flex-1 px-3 py-2.5 flex items-center gap-2 group-hover:bg-orange-50 dark:group-hover:bg-orange-950/20 transition-colors">
                     @if (isHourInSelection(slot.value)) {
-                      <ui-icon name="check" class="text-amber-600 text-base shrink-0" />
-                      <span class="text-xs font-semibold text-amber-700 dark:text-amber-400">Selected</span>
+                      <ui-icon name="check" class="text-orange-600 text-base shrink-0" />
+                      <span class="text-xs font-semibold text-orange-700 dark:text-orange-400">Selected</span>
                     } @else {
-                      <span class="text-xs text-gray-400 dark:text-zinc-500 group-hover:text-amber-600 dark:group-hover:text-amber-400 transition-colors">Available — click to select</span>
+                      <span class="text-xs text-gray-400 dark:text-zinc-500 group-hover:text-orange-600 dark:group-hover:text-orange-400 transition-colors">Available — click to select</span>
                     }
                   </div>
                 </div>
@@ -276,11 +374,11 @@ type PickerView = 'calendar' | 'timeslots';
           <div class="flex gap-3 mt-2">
             <button type="button" (click)="pickerView.set('calendar')"
               class="flex-1 flex items-center justify-center gap-2 rounded-xl border border-gray-300 dark:border-zinc-600 px-4 py-3 text-sm font-semibold text-gray-700 dark:text-zinc-300 hover:bg-gray-50 dark:hover:bg-zinc-800 transition-colors cursor-pointer">
-              <ui-icon name="arrow_back" class="text-base" /> Back
+              <ui-icon name="arrow_back" class="text-base" /> Back to Calendar
             </button>
             <button type="button" (click)="confirmTimeSlot()"
               [disabled]="selStart() === null"
-              class="flex-1 flex items-center justify-center gap-2 rounded-xl bg-amber-500 px-4 py-3 text-sm font-bold text-white hover:bg-amber-600 transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed shadow-sm">
+              class="flex-1 flex items-center justify-center gap-2 rounded-xl bg-orange-500 px-4 py-3 text-sm font-bold text-white hover:bg-orange-600 transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed shadow-sm">
               <ui-icon name="check" class="text-base" /> Confirm Slot
             </button>
           </div>
@@ -289,40 +387,45 @@ type PickerView = 'calendar' | 'timeslots';
     </div>
   `,
 })
-export class FltCoordinationCalendar {
-  @Input() events: RescheduleEvent[] = [];
-  @Input() eventTitle = '';
+export class MaintenanceCalendarPicker {
+  @Input() facilityLabel = '';
+
+  // Signal-backed inputs so computed() re-runs when the parent passes new values
+  private readonly _blocks = signal<ExistingBlock[]>([]);
+  @Input() set existingBlocks(val: ExistingBlock[]) { this._blocks.set(val ?? []); }
+  get existingBlocks(): ExistingBlock[] { return this._blocks(); }
+
+  private readonly _events = signal<ScheduledEvent[]>([]);
+  /** Approved reservations and coordination meetings — shown as read-only on the calendar */
+  @Input() set events(val: ScheduledEvent[]) { this._events.set(val ?? []); }
+  get events(): ScheduledEvent[] { return this._events(); }
+
   @Input() saving = signal(false);
-  /** Pre-existing coordination slot to highlight on open (if any) */
-  @Input() set initial(v: CoordinationSlot | null) {
-    if (v) {
-      this.selectedSlot.set(v);
-      // Jump to that month
-      const [y, m] = v.date.split('-').map(Number);
-      this.activeYear.set(y);
-      this.activeMonth.set(m - 1);
-    }
-  }
-  @Output() saved = new EventEmitter<CoordinationSlot>();
+
+  @Output() addSlot = new EventEmitter<MaintenanceSlot>();
+  @Output() removeSlot = new EventEmitter<number>();
   @Output() cancelled = new EventEmitter<void>();
 
   readonly pickerView = signal<PickerView>('calendar');
   readonly selectedDay = signal<string | null>(null);
-  readonly selectedSlot = signal<CoordinationSlot | null>(null);
+  readonly pendingSlot = signal<{ date: string; startTime: string; endTime: string } | null>(null);
   readonly selStart = signal<number | null>(null);
   readonly selEnd = signal<number | null>(null);
   readonly timeSlotError = signal('');
 
-  readonly activeYear = signal(new Date().getFullYear());
-  readonly activeMonth = signal(new Date().getMonth());
+  pendingReason = '';
+
+  private today = new Date();
+  readonly activeYear = signal(this.today.getFullYear());
+  readonly activeMonth = signal(this.today.getMonth());
 
   readonly weekdays = WEEKDAYS;
   readonly timeSlots = TIME_SLOTS;
 
-  readonly monthLabel = computed(() => {
-    const d = new Date(this.activeYear(), this.activeMonth(), 1);
-    return d.toLocaleString('default', { month: 'long', year: 'numeric' });
-  });
+  readonly monthLabel = computed(() =>
+    new Date(this.activeYear(), this.activeMonth(), 1)
+      .toLocaleString('default', { month: 'long', year: 'numeric' })
+  );
 
   readonly calendarCells = computed<CalendarCell[]>(() => {
     const year = this.activeYear();
@@ -333,12 +436,11 @@ export class FltCoordinationCalendar {
     const firstWeekday = new Date(year, month, 1).getDay();
     const daysInMonth = new Date(year, month + 1, 0).getDate();
     const cellCount = Math.max(5, Math.ceil((firstWeekday + daysInMonth) / 7)) * 7;
-    const evs = this.events;
 
     return Array.from({ length: cellCount }, (_, i) => {
       const dayOffset = i - firstWeekday;
       if (dayOffset < 0 || dayOffset >= daysInMonth) {
-        return { day: null, dateStr: null, isToday: false, isPast: false, events: [] };
+        return { day: null, dateStr: null, isToday: false, isPast: false, events: [], blocks: [] };
       }
       const day = dayOffset + 1;
       const dateStr = this.fmt(new Date(year, month, day));
@@ -346,7 +448,8 @@ export class FltCoordinationCalendar {
         day, dateStr,
         isToday: dateStr === todayStr,
         isPast: dateStr < todayStr,
-        events: evs.filter(e => e.date === dateStr),
+        events: this._events().filter(e => e.date === dateStr),
+        blocks: this._blocks().filter(b => b.blockDate === dateStr),
       };
     });
   });
@@ -354,6 +457,12 @@ export class FltCoordinationCalendar {
   readonly calendarRows = computed(() =>
     `repeat(${this.calendarCells().length / 7}, minmax(5rem, 1fr))`
   );
+
+  readonly blocksOnSelectedDay = computed(() => {
+    const day = this.selectedDay();
+    if (!day) return [];
+    return this._blocks().filter(b => b.blockDate === day);
+  });
 
   prevMonth(): void {
     if (this.activeMonth() === 0) { this.activeMonth.set(11); this.activeYear.update(y => y - 1); }
@@ -373,11 +482,21 @@ export class FltCoordinationCalendar {
     this.pickerView.set('timeslots');
   }
 
-  getSlotEvent(hourStr: string): RescheduleEvent | null {
+  getBlockForSlot(hourStr: string): ExistingBlock | null {
     const day = this.selectedDay();
     if (!day) return null;
     const hour = parseInt(hourStr, 10);
-    return this.events.find(ev => {
+    return this._blocks().find(b => {
+      if (b.blockDate !== day) return false;
+      return hour >= parseInt(b.startTime, 10) && hour < parseInt(b.endTime, 10);
+    }) ?? null;
+  }
+
+  getEventForSlot(hourStr: string): ScheduledEvent | null {
+    const day = this.selectedDay();
+    if (!day) return null;
+    const hour = parseInt(hourStr, 10);
+    return this._events().find(ev => {
       if (ev.date !== day) return false;
       return hour >= parseInt(ev.startTime, 10) && hour < parseInt(ev.endTime, 10);
     }) ?? null;
@@ -404,14 +523,23 @@ export class FltCoordinationCalendar {
       this.selEnd.set(null);
     } else {
       const [lo, hi] = hour > start ? [start, hour + 1] : [hour, start + 1];
-      const conflict = this.events.find(ev => {
-        if (ev.date !== this.selectedDay()) return false;
-        const es = parseInt(ev.startTime, 10);
-        const ee = parseInt(ev.endTime, 10);
-        return lo < ee && hi > es;
+      const day = this.selectedDay();
+      // Check conflict with maintenance blocks
+      const blockConflict = this._blocks().find(b => {
+        if (b.blockDate !== day) return false;
+        return lo < parseInt(b.endTime, 10) && hi > parseInt(b.startTime, 10);
       });
-      if (conflict) {
-        this.timeSlotError.set('Selection overlaps with an existing event or coordination meeting.');
+      if (blockConflict) {
+        this.timeSlotError.set('Selection overlaps with an existing maintenance block.');
+        return;
+      }
+      // Check conflict with approved events
+      const eventConflict = this._events().find(ev => {
+        if (ev.date !== day) return false;
+        return lo < parseInt(ev.endTime, 10) && hi > parseInt(ev.startTime, 10);
+      });
+      if (eventConflict) {
+        this.timeSlotError.set('Selection overlaps with an approved reservation or coordination meeting.');
         return;
       }
       this.selStart.set(lo);
@@ -425,7 +553,7 @@ export class FltCoordinationCalendar {
     const start = this.selStart();
     if (!day || start === null) return;
     const end = this.selEnd() ?? start + 1;
-    this.selectedSlot.set({
+    this.pendingSlot.set({
       date: day,
       startTime: `${String(start).padStart(2, '0')}:00`,
       endTime: `${String(end).padStart(2, '0')}:00`,
@@ -435,9 +563,17 @@ export class FltCoordinationCalendar {
     this.pickerView.set('calendar');
   }
 
-  save(): void {
-    const s = this.selectedSlot();
-    if (s) this.saved.emit(s);
+  saveBlock(): void {
+    const slot = this.pendingSlot();
+    if (!slot) return;
+    this.addSlot.emit({
+      date: slot.date,
+      startTime: slot.startTime,
+      endTime: slot.endTime,
+      reason: this.pendingReason.trim() || 'Under Maintenance',
+    });
+    this.pendingSlot.set(null);
+    this.pendingReason = '';
   }
 
   formatDateShort(dateStr: string): string {

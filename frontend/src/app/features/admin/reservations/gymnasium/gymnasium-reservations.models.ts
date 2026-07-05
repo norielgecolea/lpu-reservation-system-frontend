@@ -11,19 +11,17 @@ export interface RequestedEquipmentItem {
   name: string;
 }
 
-export interface FltReservationRecord {
+export interface GymReservationRecord {
   id: number;
   eventTitle: string;
-  eventType: string;
   department: string;
   organization: string;
+  numberOfAttendees: string | null;
   contactPerson: string;
   contactEmail: string;
   contactNumber: string;
   reservedDates: string;
   requestedEquipment: string | null;
-  roomType: string | null;
-  expectedAttendees: string | null;
   coordinationDate: string | null;
   coordinationStartTime: string | null;
   coordinationEndTime: string | null;
@@ -43,13 +41,13 @@ export interface RescheduleRequest {
   reservedDates: ReservedDateSlot[];
 }
 
-export interface FltAdminListResponse {
+export interface GymAdminListResponse {
   success: boolean;
   message: string;
-  reservations: FltReservationRecord[];
+  reservations: GymReservationRecord[];
 }
 
-export interface FltAdminActionResponse {
+export interface GymAdminActionResponse {
   success: boolean;
   message: string;
   blockedReason?: string;

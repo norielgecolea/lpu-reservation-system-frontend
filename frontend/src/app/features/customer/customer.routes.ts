@@ -25,7 +25,11 @@ export const CUSTOMER_ROUTES: Routes = [
   },
   {
     path: 'gymnasium',
-    loadComponent: () => import('./gymnasium/gymnasium').then((m) => m.GymnasiumReservation),
+    loadComponent: () => import('./gymnasium/gymnasium-reservation').then((m) => m.GymnasiumReservation),
+  },
+  {
+    path: 'gymnasium/terms',
+    loadComponent: () => import('./gymnasium/gymnasium-terms').then((m) => m.GymnasiumTerms),
   },
   {
     path: 'nexus-room',

@@ -46,6 +46,7 @@ export interface FltReservationApiResponse {
 
 export interface FltApprovedEvent {
   eventTitle: string;
+  department: string;
   organization: string;
   date: string;
   startTime: string;
