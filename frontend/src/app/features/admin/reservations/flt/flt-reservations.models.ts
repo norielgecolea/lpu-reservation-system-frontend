@@ -31,6 +31,8 @@ export interface FltReservationRecord {
   status: ReservationStatus;
   createdAt: string;
   satisfactionRating: number | null;
+  approvedAt: string | null;
+  approvedBy: string | null;
 }
 
 export interface SetCoordinationRequest {
@@ -54,4 +56,5 @@ export interface FltAdminActionResponse {
   message: string;
   blockedReason?: string;
   conflictedIds?: number[];
+  revertedIds?: number[];
 }

@@ -21,6 +21,7 @@ export interface ReservationWsEvent {
   reservationId: number;
   status: string;
   conflictedIds?: number[];
+  revertedIds?: number[];
   timestamp?: string;
 }
 
@@ -33,12 +34,15 @@ export class ReservationRealtimeService {
   private client: Client | null = null;
   private fltStompSub: StompSubscription | null = null;
   private gymStompSub: StompSubscription | null = null;
+  private vanStompSub: StompSubscription | null = null;
 
   private readonly fltSubject = new Subject<ReservationWsEvent>();
   private readonly gymSubject = new Subject<ReservationWsEvent>();
+  private readonly vanSubject = new Subject<ReservationWsEvent>();
 
   readonly fltUpdates$: Observable<ReservationWsEvent> = this.fltSubject.asObservable();
   readonly gymUpdates$: Observable<ReservationWsEvent> = this.gymSubject.asObservable();
+  readonly vanUpdates$: Observable<ReservationWsEvent> = this.vanSubject.asObservable();
 
   constructor() {
     if (!this.isBrowser) return;
@@ -111,12 +115,17 @@ export class ReservationRealtimeService {
     this.gymStompSub = this.client.subscribe('/topic/reservations/gymnasium', (msg: IMessage) => {
       this.gymSubject.next(parseReservationWsEvent(msg.body));
     });
+    this.vanStompSub = this.client.subscribe('/topic/reservations/van', (msg: IMessage) => {
+      this.vanSubject.next(parseReservationWsEvent(msg.body));
+    });
   }
 
   private clearSubscriptions(): void {
     this.fltStompSub?.unsubscribe();
     this.gymStompSub?.unsubscribe();
+    this.vanStompSub?.unsubscribe();
     this.fltStompSub = null;
     this.gymStompSub = null;
+    this.vanStompSub = null;
   }
 }

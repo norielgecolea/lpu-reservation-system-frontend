@@ -7,8 +7,6 @@ import {
   Validators,
 } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
-
-import { AdminShell } from '../../../shared/layout/admin-shell/admin-shell';
 import { UiButton, UiFormFeedback, UiIcon, UiInput } from '../../../shared/ui';
 import { FacilitiesUsersService } from './facilities-users.service';
 
@@ -20,22 +18,18 @@ function passwordsMatch(group: AbstractControl): ValidationErrors | null {
 
 @Component({
   selector: 'app-facilities-add-user',
-  imports: [ReactiveFormsModule, RouterLink, AdminShell, UiButton, UiFormFeedback, UiIcon, UiInput],
+  imports: [ReactiveFormsModule, RouterLink, UiButton, UiFormFeedback, UiIcon, UiInput],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-<app-admin-shell>
-  <form [formGroup]="form" (ngSubmit)="save()" autocomplete="off"
-        class="animate-rise flex min-h-0 flex-1 flex-col overflow-hidden rounded-2xl
-               bg-white/45 backdrop-blur-xl ring-1 ring-inset ring-white/60
-               shadow-[inset_0_1px_0_rgba(255,255,255,0.8),0_16px_40px_-12px_rgba(24,24,27,0.18)]
-               dark:bg-zinc-900/50 dark:ring-white/10">
+<form [formGroup]="form" (ngSubmit)="save()" autocomplete="off"
+        class="animate-rise flex min-h-0 flex-1 flex-col overflow-hidden rounded-2xl bg-white/45 backdrop-blur-xl ring-1 ring-inset ring-white/60 shadow-[inset_0_1px_0_rgba(255,255,255,0.8),0_16px_40px_-12px_rgba(24,24,27,0.18)]">
 
     <div class="mx-5 border-b border-primary/30 py-3.5 sm:mx-7">
-      <div class="flex items-center gap-3 text-primary dark:text-white">
+      <div class="flex items-center gap-3 text-primary">
         <ui-icon name="person_add" class="text-2xl" />
         <div>
-          <h2 class="text-xl font-black">ADD FACILITIES ADMIN</h2>
-          <p class="text-xs text-gray-500 dark:text-zinc-400">Account role is locked to Facilities Admin</p>
+          <h2 class="text-xl font-black">Add User</h2>
+          <p class="text-xs text-gray-500">Creates a Facilities Admin account</p>
         </div>
       </div>
     </div>
@@ -46,36 +40,36 @@ function passwordsMatch(group: AbstractControl): ValidationErrors | null {
       <div class="grid content-start gap-5 sm:grid-cols-2">
 
         <div class="flex flex-col gap-1.5 sm:col-span-2">
-          <label for="fa-fullname" class="text-sm font-bold text-gray-800 dark:text-zinc-200">Full Name</label>
+          <label for="fa-fullname" class="text-sm font-bold text-gray-800">Full Name</label>
           <input uiInput id="fa-fullname" type="text" formControlName="fullname" autocomplete="off" />
         </div>
 
         <div class="flex flex-col gap-1.5">
-          <label for="fa-empid" class="text-sm font-bold text-gray-800 dark:text-zinc-200">Employee ID</label>
+          <label for="fa-empid" class="text-sm font-bold text-gray-800">Employee ID</label>
           <input uiInput id="fa-empid" type="text" formControlName="employeeId" autocomplete="off" />
         </div>
 
         <div class="flex flex-col gap-1.5">
-          <label for="fa-email" class="text-sm font-bold text-gray-800 dark:text-zinc-200">Email</label>
+          <label for="fa-email" class="text-sm font-bold text-gray-800">Email</label>
           <input uiInput id="fa-email" type="email" formControlName="email" autocomplete="off" />
         </div>
 
         <div class="flex flex-col gap-1.5">
-          <label for="fa-username" class="text-sm font-bold text-gray-800 dark:text-zinc-200">Username</label>
+          <label for="fa-username" class="text-sm font-bold text-gray-800">Username</label>
           <input uiInput id="fa-username" type="text" formControlName="username" autocomplete="off" />
         </div>
 
         <!-- Role locked badge -->
         <div class="flex flex-col gap-1.5">
-          <label class="text-sm font-bold text-gray-800 dark:text-zinc-200">Role</label>
-          <div class="flex h-10 items-center rounded-lg border border-primary/40 bg-primary/5 px-3 text-sm font-semibold text-primary dark:bg-primary/10">
+          <label class="text-sm font-bold text-gray-800">Role</label>
+          <div class="flex h-10 items-center rounded-lg border border-primary/40 bg-primary/5 px-3 text-sm font-semibold text-primary">
             <ui-icon name="admin_panel_settings" class="mr-2 text-base" />
             FACILITIES ADMIN
           </div>
         </div>
 
         <div class="flex flex-col gap-1.5">
-          <label for="fa-password" class="text-sm font-bold text-gray-800 dark:text-zinc-200">Password</label>
+          <label for="fa-password" class="text-sm font-bold text-gray-800">Password</label>
           <div class="relative">
             <input uiInput id="fa-password" [type]="showPw() ? 'text' : 'password'"
                    formControlName="password" autocomplete="new-password" class="pr-10" />
@@ -87,7 +81,7 @@ function passwordsMatch(group: AbstractControl): ValidationErrors | null {
         </div>
 
         <div class="flex flex-col gap-1.5">
-          <label for="fa-confirm" class="text-sm font-bold text-gray-800 dark:text-zinc-200">Confirm Password</label>
+          <label for="fa-confirm" class="text-sm font-bold text-gray-800">Confirm Password</label>
           <div class="relative">
             <input uiInput id="fa-confirm" [type]="showConfirm() ? 'text' : 'password'"
                    formControlName="confirmPassword" autocomplete="new-password" class="pr-10" />
@@ -106,8 +100,7 @@ function passwordsMatch(group: AbstractControl): ValidationErrors | null {
       <button uiButton type="submit" [disabled]="saving()">SAVE</button>
     </div>
   </form>
-</app-admin-shell>
-  `,
+`,
 })
 export class FacilitiesAddUser {
   private readonly fb     = inject(FormBuilder);

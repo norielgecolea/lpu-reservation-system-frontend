@@ -1,8 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { CdkMenuModule } from '@angular/cdk/menu';
-
-import { AdminShell } from '../../../shared/layout/admin-shell/admin-shell';
 import {
   UiButton,
   UiIcon,
@@ -20,16 +18,13 @@ type ViewMode = 'Grid' | 'Table';
 @Component({
   selector: 'app-vehicles',
   imports: [
-    RouterLink,
-    AdminShell,
-    UiButton,
+    RouterLink, UiButton,
     UiIcon,
     UiInputSearch,
     UiSegmented,
     UiStatusBadge,
     UiToast,
-    CdkMenuModule,
-  ],
+    CdkMenuModule],
   templateUrl: './vehicles.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -46,7 +41,13 @@ export class Vehicles {
   protected readonly viewModes: ViewMode[] = ['Grid', 'Table'];
   protected readonly viewMode = signal<ViewMode>('Grid');
   protected readonly sortField = signal<SortField>('plate_num');
+  protected editPath(id: number): string {
+    return `${this.listPath}/${id}/edit`;
+  }
+
   protected readonly sortDirection = signal<'asc' | 'desc'>('asc');
+  protected readonly listPath = this.api.listPath();
+  protected readonly newPath = `${this.listPath}/new`;
   protected readonly selectedImage = signal<{ url: string; label: string } | null>(null);
 
   protected readonly filtered = computed(() => {
@@ -61,8 +62,7 @@ export class Vehicles {
           vehicle.facilityName,
           vehicle.vehicleDescription,
           String(vehicle.capacity),
-          vehicle.status,
-        ].some((field) => field?.toLowerCase().includes(q)),
+          vehicle.status].some((field) => field?.toLowerCase().includes(q)),
       );
     }
 
@@ -152,7 +152,12 @@ export class Vehicles {
   }
 
   protected remove(vehicle: VehicleRow): void {
-    if (!confirm(`Delete vehicle "${vehicle.plate_num}"? This cannot be undone.`)) {
+    const label = vehicle.plate_num || vehicle.brand || 'this vehicle';
+    if (
+      !confirm(
+        `Are you sure you want to delete "${label}"?\n\nAny van reservations linked to this vehicle will have their vehicle assignment cleared. This action cannot be undone.`,
+      )
+    ) {
       return;
     }
 

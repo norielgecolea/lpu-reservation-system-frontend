@@ -1,5 +1,4 @@
-<app-admin-shell>
-  <section class="animate-rise grid shrink-0 grid-cols-2 gap-3 sm:gap-4 xl:grid-cols-4">
+<section class="animate-rise grid shrink-0 grid-cols-2 gap-3 sm:gap-4 xl:grid-cols-4">
     @for (s of statCards(); track s.label) {
       <div
         class="relative overflow-hidden rounded-xl p-3 text-white ring-1 ring-inset ring-white/10 shadow-[inset_0_1px_0_rgba(255,255,255,0.08),0_18px_40px_-16px_rgba(0,0,0,0.5)] sm:p-4"
@@ -21,16 +20,16 @@
   </section>
 
   <section
-    class="bg-white/45 backdrop-blur-xl backdrop-saturate-150 ring-1 ring-inset ring-white/60 shadow-[inset_0_1px_0_rgba(255,255,255,0.8),0_16px_40px_-12px_rgba(24,24,27,0.18)] dark:bg-zinc-900/50 dark:ring-white/10 dark:shadow-[inset_0_1px_0_rgba(255,255,255,0.08),0_18px_44px_-14px_rgba(0,0,0,0.6)] animate-rise flex min-h-0 flex-none flex-col overflow-visible rounded-xl p-3 sm:rounded-2xl sm:p-6 lg:flex-1"
+    class="bg-white/45 backdrop-blur-xl backdrop-saturate-150 ring-1 ring-inset ring-white/60 shadow-[inset_0_1px_0_rgba(255,255,255,0.8),0_16px_40px_-12px_rgba(24,24,27,0.18)] animate-rise flex min-h-0 flex-none flex-col overflow-visible rounded-xl p-3 sm:rounded-2xl sm:p-6 lg:flex-1"
   >
     <div
       class="mb-4 flex shrink-0 flex-col gap-3 sm:mb-6 sm:flex-row sm:items-center sm:justify-between"
     >
       <ui-date-selector [value]="activeDate()" (valueChange)="selectDate($event)" />
       <ui-segmented
-        [options]="categories"
-        [value]="activeCategory()"
-        (valueChange)="selectCategory($any($event))"
+        [options]="serviceOptions"
+        [value]="activeService()"
+        (valueChange)="selectService($any($event))"
       />
     </div>
 
@@ -38,7 +37,7 @@
       class="grid min-h-136 flex-1 grid-rows-[minmax(24rem,auto)_minmax(9rem,auto)] gap-3 md:min-h-144 lg:min-h-0 lg:grid-cols-[minmax(0,1fr)_22rem] lg:grid-rows-none"
     >
       <div
-        class="flex min-h-0 flex-col overflow-hidden rounded-lg ring-1 ring-inset ring-black/5 dark:ring-white/10"
+        class="flex min-h-0 flex-col overflow-hidden rounded-lg ring-1 ring-inset ring-black/5"
       >
         <div class="min-h-0 flex-1 overflow-auto">
           <div class="grid h-full min-w-full grid-rows-[auto_minmax(0,1fr)] md:min-w-176">
@@ -51,16 +50,14 @@
             </div>
 
             <div
-              class="grid grid-cols-7 text-center text-[11px] text-gray-900 dark:text-zinc-100 sm:text-xs"
+              class="grid grid-cols-7 text-center text-[11px] text-gray-900 sm:text-xs"
               [style.grid-template-rows]="calendarDateRows()"
             >
               @for (day of calendarDays(); track day.id) {
                 <div
-                  class="flex min-h-0 flex-col border-r border-b border-white p-1.5 last:border-r-0 dark:border-zinc-700/60 sm:p-2"
+                  class="flex min-h-0 flex-col border-r border-b border-gray-100 bg-white p-1.5 last:border-r-0 sm:p-2"
                   [class.bg-gray-100]="day.rowTone === 'muted'"
-                  [class.dark:bg-zinc-800]="day.rowTone === 'muted'"
                   [class.bg-gray-50]="day.rowTone === 'soft'"
-                  [class.dark:bg-zinc-800/50]="day.rowTone === 'soft'"
                 >
                   @if (day.day !== null) {
                     <span
@@ -68,7 +65,6 @@
                       [class.bg-primary]="day.isToday"
                       [class.text-white]="day.isToday"
                       [class.shadow-sm]="day.isToday"
-                      [attr.aria-label]="day.isToday ? 'Today' : null"
                     >
                       {{ day.day }}
                     </span>
@@ -80,21 +76,18 @@
                         ) {
                           <li
                             class="min-w-0 cursor-pointer rounded border-l-4 px-1.5 py-1 text-[11px] leading-tight shadow-sm"
-                            [class]="eventColorClass(reservation.category)"
-                            [title]="reservation.time + ' - ' + reservation.title"
+                            [class]="reservation.colorClass"
+                            [title]="reservation.time + ' - ' + reservation.title + (reservation.event.description ? ' — ' + reservation.event.description : '')"
+                            (click)="openEventSummary(reservation.event)"
                           >
-                            <span class="block truncate font-bold">
-                              {{ reservation.time }}
-                            </span>
-                            <span class="block truncate font-medium">
-                              {{ reservation.title }}
-                            </span>
+                            <span class="block truncate font-bold">{{ reservation.time }}</span>
+                            <span class="block truncate font-medium">{{ reservation.title }}</span>
                           </li>
                         }
                       </ul>
                       @if (day.reservations.length > 3) {
                         <button
-                          class="mt-1 w-full shrink-0 text-left text-[11px] font-bold text-primary hover:underline dark:text-primary-400 cursor-pointer"
+                          class="mt-1 w-full shrink-0 cursor-pointer text-left text-[11px] font-bold text-primary hover:underline"
                           (click)="openDayModal(day)"
                         >
                           +{{ day.reservations.length - 3 }} more
@@ -116,54 +109,49 @@
           Upcoming Events
         </div>
         <div class="min-h-0 flex-1 overflow-y-auto p-3">
-          @for (event of upcomingEvents(); track event.id) {
-            <article
-              class="flex items-start gap-3 border-b border-gray-100 pb-3 last:border-b-0 last:pb-0 dark:border-zinc-800"
-            >
-              <div
-                class="flex h-11 w-11 shrink-0 flex-col items-center justify-center rounded-full bg-primary text-white shadow-sm"
+          @if (isComingSoon()) {
+            <p class="py-6 text-center text-xs text-gray-500">
+              {{ activeService() }} scheduling coming soon.
+            </p>
+          } @else {
+            @for (event of upcomingEvents(); track event.id) {
+              <article
+                class="flex cursor-pointer items-start gap-3 border-b border-gray-100 pb-3 last:border-b-0 last:pb-0 hover:bg-gray-50/80"
+                (click)="openEventSummary(event)"
               >
-                <span class="text-[10px] font-medium leading-tight">{{
-                  event.date | date: 'MMM'
-                }}</span>
-                <span class="text-lg font-bold leading-none">{{ event.date | date: 'd' }}</span>
-              </div>
-              <div class="min-w-0 flex-1">
-                <div class="flex items-start justify-between gap-2">
-                  <h3
-                    class="min-w-0 truncate text-xs font-semibold text-gray-900 dark:text-zinc-100"
-                  >
+                <div
+                  class="flex h-11 w-11 shrink-0 flex-col items-center justify-center rounded-full bg-primary text-white shadow-sm"
+                >
+                  <span class="text-[10px] font-medium leading-tight">{{
+                    formatEventMonth(event.date)
+                  }}</span>
+                  <span class="text-lg font-bold leading-none">{{ formatEventDay(event.date) }}</span>
+                </div>
+                <div class="min-w-0 flex-1">
+                  <h3 class="min-w-0 truncate text-xs font-semibold text-gray-900">
                     {{ event.title }}
                   </h3>
-                  <span
-                    class="shrink-0 rounded-full px-2 py-0.5 text-[10px] font-bold"
-                    [class]="eventBadgeClass(event.category)"
-                  >
-                    {{ event.category }}
-                  </span>
+                  <time class="mt-1 block text-[11px] font-medium text-gray-500">
+                    {{ event.date }} - {{ event.time }}
+                  </time>
+                  @if (event.description) {
+                    <p class="mt-1 text-[11px] leading-snug text-gray-500">{{ event.description }}</p>
+                  }
                 </div>
-                <time class="mt-1 block text-[11px] font-medium text-gray-500 dark:text-zinc-400">
-                  {{ event.date }} - {{ event.time }}
-                </time>
-                @if (event.description) {
-                  <p class="mt-1 text-[11px] leading-snug text-gray-500">
-                    {{ event.description }}
-                  </p>
-                }
-              </div>
-            </article>
-          } @empty {
-            <p class="text-center text-xs font-medium text-gray-500 dark:text-zinc-400">
-              No events this month
-            </p>
+              </article>
+            } @empty {
+              <p class="text-center text-xs font-medium text-gray-500">
+                No events this month
+              </p>
+            }
           }
         </div>
       </aside>
     </div>
 
     <div class="mt-4 flex shrink-0 flex-wrap items-center gap-2 text-[11px] font-bold sm:text-xs">
-      <span class="mr-1 text-gray-500 dark:text-zinc-400">Legend:</span>
-      @for (legend of eventLegends; track legend.label) {
+      <span class="mr-1 text-gray-500">Legend:</span>
+      @for (legend of eventLegends(); track legend.label) {
         <span
           class="inline-flex items-center rounded border-l-4 px-2 py-1 leading-none"
           [class]="legend.className"
@@ -180,17 +168,17 @@
       (click)="closeDayModal()"
     >
       <div
-        class="animate-rise flex max-h-full w-full max-w-sm cursor-default flex-col rounded-2xl bg-white shadow-2xl dark:bg-zinc-900"
+        class="animate-rise flex max-h-full w-full max-w-sm cursor-default flex-col rounded-2xl bg-white shadow-2xl"
         (click)="$event.stopPropagation()"
       >
         <div
-          class="flex shrink-0 items-center justify-between border-b border-gray-100 p-4 dark:border-zinc-800"
+          class="flex shrink-0 items-center justify-between border-b border-gray-100 p-4"
         >
-          <h3 class="text-lg font-bold text-gray-900 dark:text-zinc-100">
-            Reservations for Day {{ selectedDay.day }}
+          <h3 class="text-lg font-bold text-gray-900">
+            Events for Day {{ selectedDay.day }}
           </h3>
           <button
-            class="flex shrink-0 cursor-pointer items-center justify-center rounded-full p-1 text-gray-500 hover:bg-gray-100 hover:text-gray-900 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-zinc-100"
+            class="flex shrink-0 cursor-pointer items-center justify-center rounded-full p-1 text-gray-500 hover:bg-gray-100 hover:text-gray-900"
             (click)="closeDayModal()"
           >
             <ui-icon name="close" class="text-xl" />
@@ -200,18 +188,11 @@
           <ul class="space-y-2">
             @for (reservation of selectedDay.reservations; track reservation.id) {
               <li
-                class="rounded-lg border border-gray-100 p-3 shadow-sm dark:border-zinc-800 dark:bg-zinc-800/50"
+                class="cursor-pointer rounded-lg border border-gray-100 p-3 shadow-sm hover:bg-gray-50"
+                (click)="openEventSummary(reservation.event)"
               >
-                <div class="flex items-start justify-between gap-2">
-                  <span class="block font-bold text-primary">{{ reservation.time }}</span>
-                  <span
-                    class="shrink-0 rounded-full px-2 py-0.5 text-[10px] font-bold"
-                    [class]="eventBadgeClass(reservation.category)"
-                  >
-                    {{ reservation.category }}
-                  </span>
-                </div>
-                <span class="mt-1 block text-sm font-medium text-gray-900 dark:text-zinc-100">
+                <span class="block font-bold text-primary">{{ reservation.time }}</span>
+                <span class="mt-1 block text-sm font-medium text-gray-900">
                   {{ reservation.title }}
                 </span>
               </li>
@@ -221,4 +202,7 @@
       </div>
     </div>
   }
-</app-admin-shell>
+
+  @if (selectedEvent(); as event) {
+    <app-dashboard-event-summary-modal [event]="event" (closed)="closeEventSummary()" />
+  }

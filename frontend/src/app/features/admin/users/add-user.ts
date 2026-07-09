@@ -7,8 +7,6 @@ import {
   Validators,
 } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
-
-import { AdminShell } from '../../../shared/layout/admin-shell/admin-shell';
 import { UiButton, UiFormFeedback, UiIcon, UiInput, UiSelect } from '../../../shared/ui';
 import { USER_ROLE_OPTIONS } from './user-roles';
 import { UsersService } from './users.service';
@@ -21,7 +19,7 @@ function passwordsMatch(group: AbstractControl): ValidationErrors | null {
 
 @Component({
   selector: 'app-add-user',
-  imports: [ReactiveFormsModule, RouterLink, AdminShell, UiButton, UiFormFeedback, UiIcon, UiInput, UiSelect],
+  imports: [ReactiveFormsModule, RouterLink, UiButton, UiFormFeedback, UiIcon, UiInput, UiSelect],
   templateUrl: './add-user.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })

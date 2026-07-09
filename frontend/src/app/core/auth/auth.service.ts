@@ -4,9 +4,10 @@ import { Injectable, PLATFORM_ID, computed, inject, signal } from '@angular/core
 import { tap } from 'rxjs';
 
 import { environment } from '../../../environments/environment';
-import { AuthResponse, AuthUser, LoginRequest } from './auth.models';
+import { AuthResponse, AuthUser, LoginRequest, UpdateProfileRequest, ForgotPasswordRequest, ResetPasswordWithTokenRequest } from './auth.models';
 
 const TOKEN_KEY = 'lpul_token';
+const USERNAME_KEY = 'lpul_remember_username';
 
 @Injectable({ providedIn: 'root' })
 export class AuthService {
@@ -18,10 +19,10 @@ export class AuthService {
   readonly user = signal<AuthUser | null>(null);
   readonly isAuthenticated = computed(() => this.token() !== null);
 
-  login(payload: LoginRequest) {
+  login(payload: LoginRequest, remember = true) {
     return this.http
       .post<AuthResponse>(`${this.base}/auth/login`, payload)
-      .pipe(tap((res) => res.success && this.setSession(res)));
+      .pipe(tap((res) => res.success && this.setSession(res, remember)));
   }
 
   /** Validate the stored token and refresh the current user. */
@@ -31,20 +32,55 @@ export class AuthService {
       .pipe(tap((res) => this.user.set(toUser(res))));
   }
 
+  updateProfile(payload: UpdateProfileRequest) {
+    return this.http
+      .put<AuthResponse>(`${this.base}/auth/profile`, payload)
+      .pipe(tap((res) => res.success && this.applyUserUpdate(res)));
+  }
+
+  forgotPassword(payload: ForgotPasswordRequest) {
+    return this.http.post<AuthResponse>(`${this.base}/auth/forgot-password`, payload);
+  }
+
+  resetPasswordWithToken(payload: ResetPasswordWithTokenRequest) {
+    return this.http.post<AuthResponse>(`${this.base}/auth/reset-password`, payload);
+  }
+
   logout() {
     this.token.set(null);
     this.user.set(null);
-    if (this.isBrowser) localStorage.removeItem(TOKEN_KEY);
+    if (this.isBrowser) {
+      localStorage.removeItem(TOKEN_KEY);
+      sessionStorage.removeItem(TOKEN_KEY);
+    }
   }
 
-  private setSession(res: AuthResponse) {
+  rememberedUsername(): string | null {
+    return this.isBrowser ? localStorage.getItem(USERNAME_KEY) : null;
+  }
+
+  private setSession(res: AuthResponse, remember: boolean) {
     this.token.set(res.token);
     this.user.set(toUser(res));
-    if (this.isBrowser) localStorage.setItem(TOKEN_KEY, res.token);
+    if (!this.isBrowser) return;
+
+    if (remember) {
+      localStorage.setItem(TOKEN_KEY, res.token);
+      sessionStorage.removeItem(TOKEN_KEY);
+      localStorage.setItem(USERNAME_KEY, res.username);
+    } else {
+      sessionStorage.setItem(TOKEN_KEY, res.token);
+      localStorage.removeItem(TOKEN_KEY);
+    }
+  }
+
+  private applyUserUpdate(res: AuthResponse) {
+    this.user.set(toUser(res));
   }
 
   private readToken(): string | null {
-    return this.isBrowser ? localStorage.getItem(TOKEN_KEY) : null;
+    if (!this.isBrowser) return null;
+    return localStorage.getItem(TOKEN_KEY) ?? sessionStorage.getItem(TOKEN_KEY);
   }
 }
 

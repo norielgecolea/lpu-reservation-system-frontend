@@ -1,8 +1,6 @@
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
-
-import { AdminShell } from '../../../shared/layout/admin-shell/admin-shell';
 import { UiButton, UiFormFeedback, UiIcon, UiInput, UiSelect, UiSelectOption } from '../../../shared/ui';
 import { toFacilityOptions } from './equipment-facilities';
 import { EQUIPMENT_STATUS_OPTIONS } from './equipment-status';
@@ -10,7 +8,7 @@ import { EquipmentsService } from './equipments.service';
 
 @Component({
   selector: 'app-add-equipment',
-  imports: [ReactiveFormsModule, RouterLink, AdminShell, UiButton, UiFormFeedback, UiIcon, UiInput, UiSelect],
+  imports: [ReactiveFormsModule, RouterLink, UiButton, UiFormFeedback, UiIcon, UiInput, UiSelect],
   templateUrl: './add-equipment.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -19,6 +17,7 @@ export class AddEquipment {
   private readonly api = inject(EquipmentsService);
   private readonly router = inject(Router);
 
+  protected readonly listPath = this.api.listPath();
   protected readonly statuses = EQUIPMENT_STATUS_OPTIONS;
   protected readonly facilities = signal<UiSelectOption[]>([]);
   protected readonly saving = signal(false);
@@ -33,7 +32,7 @@ export class AddEquipment {
   constructor() {
     this.api.listFacilities().subscribe({
       next: (facilities) => {
-        this.facilities.set(toFacilityOptions(facilities ?? []));
+        this.facilities.set(toFacilityOptions(facilities ?? [], this.api.scope()));
       },
       error: (err) => {
         this.error.set(err?.error?.message ?? 'Unable to load services');
@@ -63,7 +62,7 @@ export class AddEquipment {
           this.saving.set(false);
 
           if (res?.success) {
-            this.router.navigateByUrl('/equipments');
+            this.router.navigateByUrl(this.api.listPath());
           } else {
             this.error.set(res?.message ?? 'Failed to create equipment');
           }

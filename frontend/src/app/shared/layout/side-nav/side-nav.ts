@@ -3,7 +3,7 @@ import { NavigationEnd, Router, RouterLink, RouterLinkActive } from '@angular/ro
 import { filter } from 'rxjs';
 
 import { AuthService } from '../../../core/auth/auth.service';
-import { ThemeService } from '../../../core/theme/theme.service';
+import { AccountProfileModal } from '../account-profile-modal';
 import { UiIcon } from '../../ui';
 
 interface NavChild {
@@ -21,7 +21,7 @@ interface NavItem {
 
 @Component({
   selector: 'app-side-nav',
-  imports: [RouterLink, RouterLinkActive, UiIcon],
+  imports: [RouterLink, RouterLinkActive, UiIcon, AccountProfileModal],
   templateUrl: './side-nav.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { class: 'contents' },
@@ -29,22 +29,20 @@ interface NavItem {
 export class SideNav implements OnInit {
   private readonly auth = inject(AuthService);
   private readonly router = inject(Router);
-  private readonly themeService = inject(ThemeService);
 
   protected readonly user  = this.auth.user;
-  protected readonly isDark = this.themeService.isDark;
-
-  protected toggleTheme(): void { this.themeService.toggle(); }
 
   private static readonly SUPERADMIN_NAV: NavItem[] = [
     { label: 'Dashboard',   icon: 'grid_view',       link: '/dashboard' },
     { label: 'Users',       icon: 'group',           link: '/users' },
     { label: 'Equipments',  icon: 'inventory_2',     link: '/equipments' },
     { label: 'Vehicles',    icon: 'directions_car',  link: '/vehicles' },
+    { label: 'Drivers',     icon: 'badge',           link: '/drivers' },
     {
       label: 'Reservation', icon: 'event_note', children: [
         { label: 'FLT Theater', icon: 'theaters',          link: '/reservation/flt' },
         { label: 'Gymnasium',   icon: 'sports_gymnastics', link: '/reservation/gymnasium' },
+        { label: 'University Van', icon: 'airport_shuttle', link: '/reservation/van' },
       ],
     },
   ];
@@ -53,6 +51,8 @@ export class SideNav implements OnInit {
     { label: 'Dashboard',  icon: 'grid_view',    link: '/facilities/dashboard' },
     { label: 'Users',      icon: 'group',        link: '/facilities/users' },
     { label: 'Equipments', icon: 'inventory_2',  link: '/facilities/equipments' },
+    { label: 'Vehicles',   icon: 'directions_car', link: '/facilities/vehicles' },
+    { label: 'Drivers',    icon: 'badge',        link: '/facilities/drivers' },
     {
       label: 'Scheduling', icon: 'event_note', children: [
         { label: 'FLT Theater',    icon: 'theaters',          link: '/facilities/reservation/flt' },
@@ -70,12 +70,21 @@ export class SideNav implements OnInit {
   });
 
   protected readonly openGroups = signal<Set<string>>(new Set());
+  protected readonly profileOpen = signal(false);
+  protected readonly mobileNavOpen = signal(false);
 
   ngOnInit(): void {
     this.syncOpenGroups();
     this.router.events
       .pipe(filter(e => e instanceof NavigationEnd))
-      .subscribe(() => this.syncOpenGroups());
+      .subscribe(() => {
+        this.syncOpenGroups();
+        this.mobileNavOpen.set(false);
+      });
+  }
+
+  protected toggleMobileNav(): void {
+    this.mobileNavOpen.update(open => !open);
   }
 
   private syncOpenGroups(): void {
@@ -120,5 +129,13 @@ export class SideNav implements OnInit {
   protected logout(): void {
     this.auth.logout();
     this.router.navigateByUrl('/login');
+  }
+
+  protected openProfile(): void {
+    this.profileOpen.set(true);
+  }
+
+  protected closeProfile(): void {
+    this.profileOpen.set(false);
   }
 }

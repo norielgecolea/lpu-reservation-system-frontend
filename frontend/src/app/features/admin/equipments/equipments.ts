@@ -1,7 +1,5 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
-
-import { AdminShell } from '../../../shared/layout/admin-shell/admin-shell';
 import {
   UiButton,
   UiIcon,
@@ -13,21 +11,19 @@ import {
 import { EquipmentRow } from './equipments.models';
 import { EquipmentsService } from './equipments.service';
 
-const SERVICE_FILTERS = ['All', 'FLT', 'Gym', 'Boardroom', 'Nexus', 'Conference'] as const;
-type ServiceFilter = (typeof SERVICE_FILTERS)[number];
+const ADMIN_SERVICE_FILTERS = ['All', 'FLT', 'Gym', 'Boardroom', 'Nexus', 'Conference'] as const;
+const FACILITIES_SERVICE_FILTERS = ['All', 'FLT', 'Gym'] as const;
+type ServiceFilter = (typeof ADMIN_SERVICE_FILTERS)[number] | (typeof FACILITIES_SERVICE_FILTERS)[number];
 
 @Component({
   selector: 'app-equipments',
   imports: [
-    RouterLink,
-    AdminShell,
-    UiButton,
+    RouterLink, UiButton,
     UiIcon,
     UiInputSearch,
     UiSegmented,
     UiStatusBadge,
-    UiToast,
-  ],
+    UiToast],
   templateUrl: './equipments.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -41,7 +37,12 @@ export class Equipments {
   protected readonly showToast = signal(false);
   protected readonly toastMessage = signal('');
   protected readonly toastSuccess = signal(false);
-  protected readonly serviceFilters: ServiceFilter[] = [...SERVICE_FILTERS];
+  protected readonly scope = this.api.scope();
+  protected readonly listPath = this.api.listPath();
+  protected readonly newPath = `${this.listPath}/new`;
+  protected readonly serviceFilters: ServiceFilter[] = this.scope === 'facilities'
+    ? [...FACILITIES_SERVICE_FILTERS]
+    : [...ADMIN_SERVICE_FILTERS];
   protected readonly activeService = signal<ServiceFilter>('All');
   protected readonly sortField = signal<'name' | 'facilityName' | 'status'>('name');
   protected readonly sortDirection = signal<'asc' | 'desc'>('asc');
@@ -78,6 +79,10 @@ export class Equipments {
       return direction === 'asc' ? comparison : -comparison;
     });
   });
+
+  protected editPath(id: number): string {
+    return `${this.listPath}/${id}/edit`;
+  }
 
   protected selectService(service: ServiceFilter): void {
     this.activeService.set(service);

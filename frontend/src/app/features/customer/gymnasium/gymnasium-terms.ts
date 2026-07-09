@@ -7,7 +7,7 @@ import { UiIcon } from '../../../shared/ui';
   imports: [RouterLink, UiIcon],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <div class="min-h-screen bg-gray-50 dark:bg-zinc-900">
+    <div class="min-h-screen bg-gray-50">
       <!-- Header -->
       <div class="bg-primary bg-[linear-gradient(135deg,#7a2342,#5f1830_55%,#8d2546)] text-white shadow-lg">
         <div class="max-w-screen-md mx-auto px-4 sm:px-6 py-5 flex items-center gap-4">
@@ -25,12 +25,12 @@ import { UiIcon } from '../../../shared/ui';
 
       <div class="max-w-screen-md mx-auto px-4 sm:px-6 py-8 flex flex-col gap-6">
         <!-- Overview -->
-        <div class="rounded-2xl bg-white dark:bg-zinc-900 ring-1 ring-black/5 dark:ring-white/10 shadow-sm p-6">
-          <h2 class="text-base font-black text-gray-900 dark:text-zinc-100 mb-1 flex items-center gap-2">
+        <div class="rounded-2xl bg-white ring-1 ring-black/5 shadow-sm p-6">
+          <h2 class="text-base font-black text-gray-900 mb-1 flex items-center gap-2">
             <ui-icon name="sports_gymnastics" class="text-primary text-lg" />
             LPU Laguna Gymnasium Reservation Policy
           </h2>
-          <p class="text-sm text-gray-500 dark:text-zinc-400">
+          <p class="text-sm text-gray-500">
             By submitting a reservation request for the LPU Laguna Gymnasium, you agree to the following terms and conditions.
             Please read them carefully before proceeding.
           </p>
@@ -38,14 +38,14 @@ import { UiIcon } from '../../../shared/ui';
 
         <!-- Terms sections -->
         @for (section of sections; track section.title) {
-          <div class="rounded-2xl bg-white dark:bg-zinc-900 ring-1 ring-black/5 dark:ring-white/10 shadow-sm p-6 flex flex-col gap-3">
-            <h3 class="font-bold text-gray-900 dark:text-zinc-100 flex items-center gap-2">
+          <div class="rounded-2xl bg-white ring-1 ring-black/5 shadow-sm p-6 flex flex-col gap-3">
+            <h3 class="font-bold text-gray-900 flex items-center gap-2">
               <span class="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary text-xs font-black">{{ $index + 1 }}</span>
               {{ section.title }}
             </h3>
             <ul class="flex flex-col gap-2">
               @for (item of section.items; track item) {
-                <li class="flex items-start gap-2 text-sm text-gray-600 dark:text-zinc-400">
+                <li class="flex items-start gap-2 text-sm text-gray-600">
                   <ui-icon name="chevron_right" class="text-primary text-base shrink-0 mt-0.5" />
                   {{ item }}
                 </li>
@@ -55,8 +55,8 @@ import { UiIcon } from '../../../shared/ui';
         }
 
         <!-- Agreement -->
-        <div class="rounded-2xl bg-primary/5 dark:bg-primary/10 ring-1 ring-primary/20 p-6 text-center">
-          <p class="text-sm font-semibold text-primary dark:text-primary mb-3">
+        <div class="rounded-2xl bg-primary/5 ring-1 ring-primary/20 p-6 text-center">
+          <p class="text-sm font-semibold text-primary mb-3">
             By checking "I agree" in the reservation form, you acknowledge that you have read, understood, and agree to all of these terms and conditions.
           </p>
           <a routerLink="/customer/gymnasium"
@@ -77,7 +77,7 @@ export class GymnasiumTerms {
         'Gymnasium reservations are available to LPU Laguna faculty, staff, students, and accredited organizations.',
         'The requesting party must have a valid LPU Laguna identification or organizational accreditation.',
         'All reservations must be submitted by an authorized representative who will be responsible for the event.',
-        'Reservations must be made at least 14 days (2 weeks) prior to the event date.',
+        'Reservations must be made at least 3 days prior to the event date.',
       ],
     },
     {

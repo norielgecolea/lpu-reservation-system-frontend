@@ -6,6 +6,7 @@ import {
   AccountStatementResponse,
   CreateAccountRequest,
   PopulateUsersResponse,
+  ResetPasswordRequest,
   UpdateUserRequest,
 } from './users.models';
 
@@ -40,5 +41,9 @@ export class UsersService {
         params: { empId },
       },
     );
+  }
+
+  resetPassword(payload: ResetPasswordRequest) {
+    return this.http.patch<AccountStatementResponse>(`${this.base}/admin/resetpassword`, payload);
   }
 }

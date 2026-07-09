@@ -1,29 +1,23 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
-
-import { AdminShell } from '../../../shared/layout/admin-shell/admin-shell';
 import { UiButton, UiFormFeedback, UiIcon, UiInput } from '../../../shared/ui';
 import { FacilitiesUsersService } from './facilities-users.service';
 
 @Component({
   selector: 'app-facilities-edit-user',
-  imports: [ReactiveFormsModule, RouterLink, AdminShell, UiButton, UiFormFeedback, UiIcon, UiInput],
+  imports: [ReactiveFormsModule, RouterLink, UiButton, UiFormFeedback, UiIcon, UiInput],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-<app-admin-shell>
-  <form [formGroup]="form" (ngSubmit)="save()" autocomplete="off"
-        class="animate-rise flex min-h-0 flex-1 flex-col overflow-hidden rounded-2xl
-               bg-white/45 backdrop-blur-xl ring-1 ring-inset ring-white/60
-               shadow-[inset_0_1px_0_rgba(255,255,255,0.8),0_16px_40px_-12px_rgba(24,24,27,0.18)]
-               dark:bg-zinc-900/50 dark:ring-white/10">
+<form [formGroup]="form" (ngSubmit)="save()" autocomplete="off"
+        class="animate-rise flex min-h-0 flex-1 flex-col overflow-hidden rounded-2xl bg-white/45 backdrop-blur-xl ring-1 ring-inset ring-white/60 shadow-[inset_0_1px_0_rgba(255,255,255,0.8),0_16px_40px_-12px_rgba(24,24,27,0.18)]">
 
     <div class="mx-5 border-b border-primary/30 py-3.5 sm:mx-7">
-      <div class="flex items-center gap-3 text-primary dark:text-white">
+      <div class="flex items-center gap-3 text-primary">
         <ui-icon name="edit_square" class="text-2xl" />
         <div>
-          <h2 class="text-xl font-black">UPDATE FACILITIES ADMIN</h2>
-          <p class="text-xs text-gray-500 dark:text-zinc-400">Account role is locked to Facilities Admin</p>
+          <h2 class="text-xl font-black">Edit User</h2>
+          <p class="text-xs text-gray-500">Updates a Facilities Admin account</p>
         </div>
       </div>
     </div>
@@ -32,34 +26,34 @@ import { FacilitiesUsersService } from './facilities-users.service';
 
     <div class="flex-1 overflow-y-auto p-5 lg:p-7">
       @if (loading()) {
-        <div class="py-10 text-center text-sm text-gray-500 dark:text-zinc-400">Loading user...</div>
+        <div class="py-10 text-center text-sm text-gray-500">Loading user...</div>
       } @else if (ready()) {
         <div class="grid content-start gap-5 sm:grid-cols-2">
 
           <div class="flex flex-col gap-1.5 sm:col-span-2">
-            <label for="fe-fullname" class="text-sm font-bold text-gray-800 dark:text-zinc-200">Full Name</label>
+            <label for="fe-fullname" class="text-sm font-bold text-gray-800">Full Name</label>
             <input uiInput id="fe-fullname" type="text" formControlName="fullname" autocomplete="off" />
           </div>
 
           <div class="flex flex-col gap-1.5">
-            <label for="fe-empid" class="text-sm font-bold text-gray-800 dark:text-zinc-200">Employee ID</label>
+            <label for="fe-empid" class="text-sm font-bold text-gray-800">Employee ID</label>
             <input uiInput id="fe-empid" type="text" formControlName="employeeId" autocomplete="off" />
           </div>
 
           <div class="flex flex-col gap-1.5">
-            <label for="fe-email" class="text-sm font-bold text-gray-800 dark:text-zinc-200">Email</label>
+            <label for="fe-email" class="text-sm font-bold text-gray-800">Email</label>
             <input uiInput id="fe-email" type="email" formControlName="email" autocomplete="off" />
           </div>
 
           <div class="flex flex-col gap-1.5">
-            <label for="fe-username" class="text-sm font-bold text-gray-800 dark:text-zinc-200">Username</label>
+            <label for="fe-username" class="text-sm font-bold text-gray-800">Username</label>
             <input uiInput id="fe-username" type="text" formControlName="username" autocomplete="off" />
           </div>
 
           <!-- Role locked badge -->
           <div class="flex flex-col gap-1.5">
-            <label class="text-sm font-bold text-gray-800 dark:text-zinc-200">Role</label>
-            <div class="flex h-10 items-center rounded-lg border border-primary/40 bg-primary/5 px-3 text-sm font-semibold text-primary dark:bg-primary/10">
+            <label class="text-sm font-bold text-gray-800">Role</label>
+            <div class="flex h-10 items-center rounded-lg border border-primary/40 bg-primary/5 px-3 text-sm font-semibold text-primary">
               <ui-icon name="admin_panel_settings" class="mr-2 text-base" />
               FACILITIES ADMIN
             </div>
@@ -74,8 +68,7 @@ import { FacilitiesUsersService } from './facilities-users.service';
       <button uiButton type="submit" [disabled]="loading() || saving() || !ready()">SAVE</button>
     </div>
   </form>
-</app-admin-shell>
-  `,
+`,
 })
 export class FacilitiesEditUser {
   private readonly fb     = inject(FormBuilder);
@@ -97,12 +90,18 @@ export class FacilitiesEditUser {
   });
 
   constructor() {
-    this.api.list().subscribe({
+    this.api.get(this.empId).subscribe({
       next: (res) => {
         this.loading.set(false);
-        if (!res?.success) { this.error.set(res?.message ?? 'Failed to load users'); return; }
-        const user = (res.users ?? []).find(u => u.employeeId === this.empId);
-        if (!user) { this.error.set('User not found'); return; }
+        if (!res?.success) {
+          this.error.set(res?.message ?? 'Failed to load user');
+          return;
+        }
+        const user = (res.users ?? [])[0];
+        if (!user) {
+          this.error.set('User not found');
+          return;
+        }
         this.form.patchValue({
           fullname:   user.fullname,
           employeeId: user.employeeId,
@@ -110,7 +109,10 @@ export class FacilitiesEditUser {
           username:   user.username,
         });
       },
-      error: (err) => { this.loading.set(false); this.error.set(err?.error?.message ?? 'Server error'); },
+      error: (err) => {
+        this.loading.set(false);
+        this.error.set(err?.error?.message ?? 'Unable to reach the server');
+      },
     });
   }
 

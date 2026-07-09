@@ -1,14 +1,13 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
-
-import { AdminShell } from '../../../shared/layout/admin-shell/admin-shell';
+import { ResetPasswordModal } from '../../../shared/layout/reset-password-modal';
 import { UiButton, UiIcon, UiInputSearch, UiStatusBadge, UiToast } from '../../../shared/ui';
 import { UsersService } from './users.service';
 import { UserRow } from './users.models';
 
 @Component({
   selector: 'app-users',
-  imports: [RouterLink, AdminShell, UiButton, UiIcon, UiInputSearch, UiStatusBadge, UiToast],
+  imports: [RouterLink, ResetPasswordModal, UiButton, UiIcon, UiInputSearch, UiStatusBadge, UiToast],
   templateUrl: './users.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -19,6 +18,7 @@ export class Users {
   protected readonly loading = signal(false);
   protected readonly error = signal<string | null>(null);
   protected readonly search = signal('');
+  protected readonly resetTarget = signal<UserRow | null>(null);
 
   protected readonly filtered = computed(() => {
     const q = this.search().trim().toLowerCase();
@@ -57,6 +57,29 @@ export class Users {
 
   protected onSearch(value: string): void {
     this.search.set(value);
+  }
+
+  protected openResetPassword(u: UserRow): void {
+    this.resetTarget.set(u);
+  }
+
+  protected closeResetPassword(): void {
+    this.resetTarget.set(null);
+  }
+
+  protected confirmResetPassword(newPassword: string): void {
+    const target = this.resetTarget();
+    if (!target) return;
+
+    this.api.resetPassword({ employeeId: target.employeeId, newPassword }).subscribe({
+      next: (res) => {
+        this.showResponse(res?.success ?? false, res?.message ?? 'Unknown response');
+        if (res?.success) this.closeResetPassword();
+      },
+      error: (err) => {
+        this.showResponse(false, err?.error?.message ?? 'Unable to reach the server');
+      },
+    });
   }
 
  protected remove(u: UserRow): void {

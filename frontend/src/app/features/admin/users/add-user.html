@@ -1,12 +1,11 @@
-<app-admin-shell>
-  <form
+<form
     [formGroup]="form"
     (ngSubmit)="save()"
     autocomplete="off"
-    class="bg-white/45 backdrop-blur-xl backdrop-saturate-150 ring-1 ring-inset ring-white/60 shadow-[inset_0_1px_0_rgba(255,255,255,0.8),0_16px_40px_-12px_rgba(24,24,27,0.18)] dark:bg-zinc-900/50 dark:ring-white/10 dark:shadow-[inset_0_1px_0_rgba(255,255,255,0.08),0_18px_44px_-14px_rgba(0,0,0,0.6)] animate-rise flex min-h-0 flex-1 flex-col overflow-hidden rounded-2xl"
+    class="bg-white/45 backdrop-blur-xl backdrop-saturate-150 ring-1 ring-inset ring-white/60 shadow-[inset_0_1px_0_rgba(255,255,255,0.8),0_16px_40px_-12px_rgba(24,24,27,0.18)] animate-rise flex min-h-0 flex-1 flex-col overflow-hidden rounded-2xl"
   >
     <div class="mx-5 border-b border-primary/30 py-3.5 sm:mx-7">
-      <div class="flex items-center gap-3 text-primary dark:text-white">
+      <div class="flex items-center gap-3 text-primary">
         <ui-icon name="person_add" class="text-2xl" />
         <h2 class="text-xl font-black">ADD USER</h2>
       </div>
@@ -22,7 +21,7 @@
     <div class="flex-1 overflow-y-auto p-5 lg:p-7">
       <div class="grid content-start gap-5 sm:grid-cols-2">
         <div class="flex flex-col gap-1.5 sm:col-span-2">
-          <label for="add-user-fullname" class="text-sm font-bold text-gray-800 dark:text-zinc-200">Full Name</label>
+          <label for="add-user-fullname" class="text-sm font-bold text-gray-800">Full Name</label>
           <input
             uiInput
             id="add-user-fullname"
@@ -34,7 +33,7 @@
         </div>
 
         <div class="flex flex-col gap-1.5">
-          <label for="add-user-employee-id" class="text-sm font-bold text-gray-800 dark:text-zinc-200">
+          <label for="add-user-employee-id" class="text-sm font-bold text-gray-800">
             Employee ID
           </label>
           <input
@@ -48,7 +47,7 @@
         </div>
 
         <div class="flex flex-col gap-1.5">
-          <label for="add-user-email" class="text-sm font-bold text-gray-800 dark:text-zinc-200">Email</label>
+          <label for="add-user-email" class="text-sm font-bold text-gray-800">Email</label>
           <input
             uiInput
             id="add-user-email"
@@ -60,7 +59,7 @@
         </div>
 
         <div class="flex flex-col gap-1.5">
-          <label for="add-user-username" class="text-sm font-bold text-gray-800 dark:text-zinc-200">Username</label>
+          <label for="add-user-username" class="text-sm font-bold text-gray-800">Username</label>
           <input
             uiInput
             id="add-user-username"
@@ -72,7 +71,7 @@
         </div>
 
         <div class="flex flex-col gap-1.5">
-          <label for="add-user-password" class="text-sm font-bold text-gray-800 dark:text-zinc-200">Password</label>
+          <label for="add-user-password" class="text-sm font-bold text-gray-800">Password</label>
           <div class="relative">
             <input
               uiInput
@@ -88,7 +87,7 @@
               (click)="showPassword.set(!showPassword())"
               [attr.aria-label]="showPassword() ? 'Hide password' : 'Show password'"
               [attr.aria-pressed]="showPassword()"
-              class="absolute inset-y-0 right-0 flex cursor-pointer items-center px-3 text-gray-200 dark:text-zinc-500 hover:text-primary focus-visible:text-primary focus-visible:outline-none"
+              class="absolute inset-y-0 right-0 flex cursor-pointer items-center px-3 text-gray-200 hover:text-primary focus-visible:text-primary focus-visible:outline-none"
             >
               <ui-icon
                 [name]="showPassword() ? 'visibility_off' : 'visibility'"
@@ -99,12 +98,12 @@
         </div>
 
         <div class="flex flex-col gap-1.5">
-          <label class="text-sm font-bold text-gray-800 dark:text-zinc-200">User Role</label>
+          <label class="text-sm font-bold text-gray-800">User Role</label>
           <ui-select formControlName="role" placeholder="Select a role" [options]="roles" />
         </div>
 
         <div class="flex flex-col gap-1.5">
-          <label for="add-user-confirm-password" class="text-sm font-bold text-gray-800 dark:text-zinc-200">
+          <label for="add-user-confirm-password" class="text-sm font-bold text-gray-800">
             Confirm Password
           </label>
           <div class="relative">
@@ -122,7 +121,7 @@
               (click)="showConfirm.set(!showConfirm())"
               [attr.aria-label]="showConfirm() ? 'Hide password' : 'Show password'"
               [attr.aria-pressed]="showConfirm()"
-              class="absolute inset-y-0 right-0 flex cursor-pointer items-center px-3 text-gray-200 dark:text-zinc-500 hover:text-primary focus-visible:text-primary focus-visible:outline-none"
+              class="absolute inset-y-0 right-0 flex cursor-pointer items-center px-3 text-gray-200 hover:text-primary focus-visible:text-primary focus-visible:outline-none"
             >
               <ui-icon
                 [name]="showConfirm() ? 'visibility_off' : 'visibility'"
@@ -143,4 +142,3 @@
       </button>
     </div>
   </form>
-</app-admin-shell>

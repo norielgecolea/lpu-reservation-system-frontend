@@ -6,6 +6,7 @@ import {
   AccountStatementResponse,
   CreateAccountRequest,
   PopulateUsersResponse,
+  ResetPasswordRequest,
   UpdateUserRequest,
 } from '../../admin/users/users.models';
 
@@ -16,6 +17,10 @@ export class FacilitiesUsersService {
 
   list() {
     return this.http.get<PopulateUsersResponse>(`${this.base}/users`);
+  }
+
+  get(empId: string) {
+    return this.http.get<PopulateUsersResponse>(`${this.base}/users/${encodeURIComponent(empId)}`);
   }
 
   create(payload: CreateAccountRequest) {
@@ -32,5 +37,9 @@ export class FacilitiesUsersService {
 
   toggleStatus(empId: string) {
     return this.http.patch<AccountStatementResponse>(`${this.base}/toggleaccstat`, {}, { params: { empId } });
+  }
+
+  resetPassword(payload: ResetPasswordRequest) {
+    return this.http.patch<AccountStatementResponse>(`${this.base}/users/reset-password`, payload);
   }
 }

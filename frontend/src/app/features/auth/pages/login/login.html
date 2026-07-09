@@ -20,7 +20,7 @@
   ></div>
 
   <div
-    class="bg-white/45 backdrop-blur-xl backdrop-saturate-150 ring-1 ring-inset ring-white/60 shadow-[inset_0_1px_0_rgba(255,255,255,0.8),0_16px_40px_-12px_rgba(24,24,27,0.18)] dark:bg-zinc-900/50 dark:ring-white/10 dark:shadow-[inset_0_1px_0_rgba(255,255,255,0.08),0_18px_44px_-14px_rgba(0,0,0,0.6)] animate-rise relative z-10 grid w-full max-w-5xl overflow-hidden rounded-3xl md:grid-cols-[1.05fr_0.95fr]"
+    class="bg-white/45 backdrop-blur-xl backdrop-saturate-150 ring-1 ring-inset ring-white/60 shadow-[inset_0_1px_0_rgba(255,255,255,0.8),0_16px_40px_-12px_rgba(24,24,27,0.18)] animate-rise relative z-10 grid w-full max-w-5xl overflow-hidden rounded-3xl md:grid-cols-[1.05fr_0.95fr]"
   >
     <div class="relative hidden min-h-155 overflow-hidden bg-slate-200 md:block">
       @for (image of heroImages; track image.src; let i = $index) {
@@ -129,7 +129,7 @@
           </label>
 
           <a
-            href="#"
+            routerLink="/forgot-password"
             class="text-sm font-semibold text-secondary transition-colors duration-200 hover:text-primary"
           >
             Forgot Password

@@ -1,8 +1,8 @@
 @import 'tailwindcss';
 @import '@angular/cdk/overlay-prebuilt.css';
 
-/* Class-based dark mode: toggled via `.dark` on <html> (ThemeService). */
-@custom-variant dark (&:where(.dark, .dark *));
+/* Neutralize all `dark:` utilities — the .never class is never applied. */
+@custom-variant dark (&:where(.never, .never *));
 
 /* Brand tokens. Tailwind's own scales (slate, gray, green, orange, red...)
    are left intact — only the two brand colors are added here. */
@@ -21,6 +21,10 @@
 }
 
 @layer base {
+  html {
+    color-scheme: light;
+  }
+
   html,
   body {
     @apply h-full;
@@ -36,17 +40,6 @@
       radial-gradient(46rem 46rem at 102% 2%, rgba(255, 255, 255, 0.7), transparent 55%),
       radial-gradient(54rem 54rem at 50% 122%, rgba(244, 244, 245, 0.8), transparent 60%);
     background-attachment: fixed;
-  }
-
-  /* Dark: zinc-950 base with subtle zinc highlights (neutral spectrum). */
-  .dark body {
-    @apply text-zinc-100;
-    color-scheme: dark;
-    background-color: #09090b;
-    background-image:
-      radial-gradient(58rem 58rem at 6% -12%, rgba(39, 39, 42, 0.9), transparent 60%),
-      radial-gradient(46rem 46rem at 102% 2%, rgba(39, 39, 42, 0.7), transparent 55%),
-      radial-gradient(54rem 54rem at 50% 122%, rgba(24, 24, 27, 0.9), transparent 60%);
   }
 
   .material-symbols-outlined {
@@ -93,6 +86,14 @@
   }
   50% {
     transform: translate3d(0, -14px, 0);
+  }
+}
+
+@layer components {
+  /* Routed page hosts sit inside main; unwrap them so section gaps and flex
+     heights match the old admin-shell ng-content projection. */
+  .admin-layout-main > * {
+    @apply contents;
   }
 }
 

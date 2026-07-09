@@ -7,6 +7,7 @@ export const serverRoutes: ServerRoute[] = [
   { path: 'users/**', renderMode: RenderMode.Client },
   { path: 'equipments/**', renderMode: RenderMode.Client },
   { path: 'vehicles/**', renderMode: RenderMode.Client },
+  { path: 'drivers/**', renderMode: RenderMode.Client },
   { path: 'reservation/**', renderMode: RenderMode.Client },
   { path: 'facilities/**', renderMode: RenderMode.Client },
   { path: '**', renderMode: RenderMode.Client },

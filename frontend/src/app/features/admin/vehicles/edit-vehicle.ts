@@ -1,8 +1,6 @@
 import { ChangeDetectionStrategy, Component, OnDestroy, computed, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
-
-import { AdminShell } from '../../../shared/layout/admin-shell/admin-shell';
 import { UiButton, UiFormFeedback, UiIcon, UiInput, UiSelect } from '../../../shared/ui';
 import { normalizeVehicleStatus, VEHICLE_STATUS_OPTIONS } from './vehicle-status';
 import { VAN_FACILITY_ID } from './vehicles.models';
@@ -12,14 +10,11 @@ import { VehiclesService } from './vehicles.service';
   selector: 'app-edit-vehicle',
   imports: [
     ReactiveFormsModule,
-    RouterLink,
-    AdminShell,
-    UiButton,
+    RouterLink, UiButton,
     UiFormFeedback,
     UiIcon,
     UiInput,
-    UiSelect,
-  ],
+    UiSelect],
   templateUrl: './edit-vehicle.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -29,6 +24,7 @@ export class EditVehicle implements OnDestroy {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
 
+  protected readonly listPath = this.api.listPath();
   protected readonly loading = signal(true);
   protected readonly saving = signal(false);
   protected readonly ready = signal(false);
@@ -163,7 +159,7 @@ export class EditVehicle implements OnDestroy {
           this.saving.set(false);
 
           if (res?.success) {
-            this.router.navigateByUrl('/vehicles');
+            this.router.navigateByUrl(this.api.listPath());
           } else {
             this.error.set(res?.message ?? 'Failed to update vehicle');
           }

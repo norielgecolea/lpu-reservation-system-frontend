@@ -12,7 +12,6 @@ import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 
 import { AuthService } from '../../../../core/auth/auth.service';
-import { ThemeService, type Theme } from '../../../../core/theme/theme.service';
 import { UiButton, UiCheckbox, UiIcon, UiInput, UiLabel } from '../../../../shared/ui';
 import { environment } from '../../../../../environments/environment';
 
@@ -29,11 +28,8 @@ export class Login implements OnDestroy {
   private readonly http = inject(HttpClient);
   private readonly auth = inject(AuthService);
   private readonly router = inject(Router);
-  private readonly themeService = inject(ThemeService);
   private readonly isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
 
-  // Login is always shown in light mode; restore the user's theme on leave.
-  private readonly previousTheme: Theme = this.themeService.theme();
   private imageInterval: ReturnType<typeof setInterval> | null = null;
   private backendStatusInterval: ReturnType<typeof setInterval> | null = null;
 
@@ -48,8 +44,6 @@ export class Login implements OnDestroy {
   ];
 
   constructor() {
-    this.themeService.set('light');
-
     if (this.isBrowser) {
       this.imageInterval = setInterval(() => {
         this.activeImage.update((index) => (index + 1) % this.heroImages.length);
@@ -66,13 +60,12 @@ export class Login implements OnDestroy {
     if (this.backendStatusInterval) {
       clearInterval(this.backendStatusInterval);
     }
-    this.themeService.set(this.previousTheme);
   }
 
   protected readonly form = this.fb.nonNullable.group({
-    username: ['', [Validators.required]],
+    username: [this.auth.rememberedUsername() ?? '', [Validators.required]],
     password: ['', [Validators.required]],
-    remember: [false],
+    remember: [!!this.auth.rememberedUsername()],
   });
 
   protected backendStatusLabel(): string {
@@ -107,11 +100,11 @@ export class Login implements OnDestroy {
       return;
     }
 
-    const { username, password } = this.form.getRawValue();
+    const { username, password, remember } = this.form.getRawValue();
     this.loading.set(true);
     this.error.set(null);
 
-    this.auth.login({ username, password }).subscribe({
+    this.auth.login({ username, password }, remember).subscribe({
       next: (res) => {
         this.loading.set(false);
 

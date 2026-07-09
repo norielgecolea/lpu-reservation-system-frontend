@@ -69,7 +69,7 @@ function getYearRangeStart(year: number): number {
         brnPopoverTrigger
         type="button"
         (click)="syncPickerYear()"
-        class="flex h-9 w-full cursor-pointer items-center justify-between gap-1.5 rounded-lg bg-white dark:bg-zinc-800 px-2.5 text-sm font-bold leading-none text-gray-600 dark:text-zinc-300 shadow-[0_1px_2px_rgba(15,23,42,0.05),0_2px_6px_-2px_rgba(15,23,42,0.10)] ring-1 ring-inset ring-black/5 dark:ring-white/10 transition-all duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-secondary hover:text-white hover:ring-transparent active:scale-[0.97] sm:w-auto sm:justify-center sm:px-4"
+        class="flex h-9 w-full cursor-pointer items-center justify-between gap-1.5 rounded-lg bg-white px-2.5 text-sm font-bold leading-none text-gray-600 shadow-[0_1px_2px_rgba(15,23,42,0.05),0_2px_6px_-2px_rgba(15,23,42,0.10)] ring-1 ring-inset ring-black/5 transition-all duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-secondary hover:text-white hover:ring-transparent active:scale-[0.97] sm:w-auto sm:justify-center sm:px-4"
       >
         <ui-icon name="calendar_today" class="text-sm" />
         <span>{{ displayValue() }}</span>
@@ -78,14 +78,14 @@ function getYearRangeStart(year: number): number {
 
       <ng-template brnPopoverContent>
         <div
-          class="z-50 w-72 max-w-[calc(100vw-2rem)] rounded-xl border border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 p-3 text-gray-900 dark:text-zinc-100 shadow-lg"
+          class="z-50 w-72 max-w-[calc(100vw-2rem)] rounded-xl border border-gray-200 bg-white p-3 text-gray-900 shadow-lg"
         >
           <div class="flex items-center justify-between gap-2">
             <button
               brnButton
               type="button"
               [attr.aria-label]="pickerView() === 'year' ? 'Previous years' : 'Previous year'"
-              class="flex h-8 w-8 cursor-pointer items-center justify-center rounded-lg text-gray-500 dark:text-zinc-400 hover:bg-secondary/10 hover:text-primary"
+              class="flex h-8 w-8 cursor-pointer items-center justify-center rounded-lg text-gray-500 hover:bg-secondary/10 hover:text-primary"
               (click)="shiftHeader(-1)"
             >
               <ui-icon name="chevron_left" class="text-lg" />
@@ -95,7 +95,7 @@ function getYearRangeStart(year: number): number {
               brnButton
               type="button"
               [attr.aria-label]="pickerView() === 'year' ? 'Show months' : 'Choose year'"
-              class="flex h-8 cursor-pointer items-center gap-1 rounded-lg px-3 text-sm font-extrabold text-black dark:text-white hover:bg-secondary/10"
+              class="flex h-8 cursor-pointer items-center gap-1 rounded-lg px-3 text-sm font-extrabold text-black hover:bg-secondary/10"
               (click)="toggleYearPicker()"
             >
               <span>{{ headerLabel() }}</span>
@@ -109,7 +109,7 @@ function getYearRangeStart(year: number): number {
               brnButton
               type="button"
               [attr.aria-label]="pickerView() === 'year' ? 'Next years' : 'Next year'"
-              class="flex h-8 w-8 cursor-pointer items-center justify-center rounded-lg text-gray-500 dark:text-zinc-400 hover:bg-secondary/10 hover:text-primary"
+              class="flex h-8 w-8 cursor-pointer items-center justify-center rounded-lg text-gray-500 hover:bg-secondary/10 hover:text-primary"
               (click)="shiftHeader(1)"
             >
               <ui-icon name="chevron_right" class="text-lg" />
@@ -122,7 +122,7 @@ function getYearRangeStart(year: number): number {
                 <button
                   brnButton
                   type="button"
-                  class="h-9 cursor-pointer rounded-lg text-sm font-semibold text-gray-600 dark:text-zinc-300 transition-colors hover:bg-secondary/10 hover:text-primary"
+                  class="h-9 cursor-pointer rounded-lg text-sm font-semibold text-gray-600 transition-colors hover:bg-secondary/10 hover:text-primary"
                   [class.bg-primary]="isSelectedYear(year)"
                   [class.text-white]="isSelectedYear(year)"
                   [class.hover:bg-primary]="isSelectedYear(year)"
@@ -139,7 +139,7 @@ function getYearRangeStart(year: number): number {
                 <button
                   brnButton
                   type="button"
-                  class="h-9 cursor-pointer rounded-lg text-sm font-semibold text-gray-600 dark:text-zinc-300 transition-colors hover:bg-secondary/10 hover:text-primary"
+                  class="h-9 cursor-pointer rounded-lg text-sm font-semibold text-gray-600 transition-colors hover:bg-secondary/10 hover:text-primary"
                   [class.bg-primary]="isSelectedMonth(month.value)"
                   [class.text-white]="isSelectedMonth(month.value)"
                   [class.hover:bg-primary]="isSelectedMonth(month.value)"

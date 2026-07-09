@@ -38,15 +38,15 @@ import { UiIcon } from '../icon/icon';
       <brn-alert-dialog-overlay class="bg-black/50" />
       <div
         *brnAlertDialogContent
-        class="fixed left-1/2 top-1/2 z-50 w-[90vw] max-w-md -translate-x-1/2 -translate-y-1/2 rounded-2xl bg-gray-50 p-6 shadow-xl dark:bg-gray-950"
+        class="fixed left-1/2 top-1/2 z-50 w-[90vw] max-w-md -translate-x-1/2 -translate-y-1/2 rounded-2xl bg-gray-50 p-6 shadow-xl"
       >
-        <div class="flex items-center gap-3 text-red-700 dark:text-red-400">
+        <div class="flex items-center gap-3 text-red-700">
           <ui-icon name="error" class="text-2xl" />
           <h2 brnAlertDialogTitle class="text-lg font-black">Error</h2>
         </div>
         <p
           brnAlertDialogDescription
-          class="mt-3 text-sm font-semibold text-gray-700 dark:text-zinc-300"
+          class="mt-3 text-sm font-semibold text-gray-700"
         >
           {{ displayedError() }}
         </p>

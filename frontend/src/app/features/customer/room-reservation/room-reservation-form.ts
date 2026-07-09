@@ -16,7 +16,7 @@ const DEFAULT_FEATURES: RoomReservationFeature[] = [
   imports: [ReactiveFormsModule, RouterLink, UiButton, UiInput, UiLabel, UiCalendar, UiIcon],
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: {
-    class: 'flex flex-col min-h-screen md:h-screen md:min-h-0 bg-gray-100 dark:bg-zinc-900',
+    class: 'flex flex-col min-h-screen md:h-screen md:min-h-0 bg-gray-100',
   },
   template: `
     <div
@@ -44,7 +44,7 @@ const DEFAULT_FEATURES: RoomReservationFeature[] = [
           {{ facility.title }}
         </h1>
 
-        <div class="grow" [class.max-md:hidden]="!isCalendarOpen()">
+        <div class="grow rounded-xl bg-white p-4 text-gray-900 shadow-lg ring-1 ring-black/5" [class.max-md:hidden]="!isCalendarOpen()">
           <ui-calendar 
             [occupiedDates]="facility.occupiedDates ?? defaultOccupiedDates"
             (selectionChanged)="onCalendarViewRangeChanged($event)"
@@ -53,7 +53,7 @@ const DEFAULT_FEATURES: RoomReservationFeature[] = [
       </div>
 
       <div
-        class="w-full md:w-2/3 xl:w-3/4 bg-white/40 dark:bg-zinc-900/40 relative h-full flex flex-col md:overflow-hidden min-h-0"
+        class="w-full md:w-2/3 xl:w-3/4 bg-white/40 relative h-full flex flex-col md:overflow-hidden min-h-0"
       >
         <form [formGroup]="form" (ngSubmit)="submit()" class="flex flex-col flex-1 w-full min-h-0">
           <div
@@ -131,19 +131,19 @@ const DEFAULT_FEATURES: RoomReservationFeature[] = [
                 id="remarks"
                 formControlName="remarks"
                 rows="4"
-                class="w-full rounded-lg border border-zinc-950/15 bg-white/70 backdrop-blur-md backdrop-saturate-150 ring-1 ring-inset ring-white/75 shadow-[inset_0_1px_0_rgba(255,255,255,0.75),inset_0_-1px_0_rgba(24,24,27,0.05),0_2px_8px_-3px_rgba(24,24,27,0.2)] dark:border-white/15 dark:bg-zinc-800/70 dark:ring-white/10 dark:shadow-[inset_0_1px_0_rgba(255,255,255,0.08),inset_0_-1px_0_rgba(0,0,0,0.28),0_2px_10px_-2px_rgba(0,0,0,0.65)] px-4 py-3 text-sm text-gray-900 dark:text-zinc-100 placeholder:text-gray-500 transition-all duration-200 hover:border-secondary/45 hover:ring-secondary/25 focus:border-primary/55 focus:ring-2 focus:ring-primary/35 focus:outline-none resize-none"
+                class="w-full rounded-lg border border-zinc-950/15 bg-white/70 backdrop-blur-md backdrop-saturate-150 ring-1 ring-inset ring-white/75 shadow-[inset_0_1px_0_rgba(255,255,255,0.75),inset_0_-1px_0_rgba(24,24,27,0.05),0_2px_8px_-3px_rgba(24,24,27,0.2)] px-4 py-3 text-sm text-gray-900 placeholder:text-gray-500 transition-all duration-200 hover:border-secondary/45 hover:ring-secondary/25 focus:border-primary/55 focus:ring-2 focus:ring-primary/35 focus:outline-none resize-none"
               ></textarea>
             </div>
           </div>
 
           <div
-            class="shrink-0 p-6 flex gap-4 mt-auto sticky bottom-0 z-20 bg-white/40 dark:bg-zinc-900/40 md:bg-transparent backdrop-blur-md md:backdrop-blur-none"
+            class="shrink-0 p-6 flex gap-4 mt-auto sticky bottom-0 z-20 bg-white/40 md:bg-transparent backdrop-blur-md md:backdrop-blur-none"
           >
             <button
               uiButton
               variant="secondary"
               type="button"
-              class="flex-1 bg-white/50 dark:bg-zinc-800/50 md:bg-transparent"
+              class="flex-1 bg-white/50 md:bg-transparent"
               routerLink="/customer"
             >
               CANCEL

@@ -10,11 +10,12 @@ import {
 import { Subscription } from 'rxjs';
 import { HttpClient } from '@angular/common/http';
 import { firstValueFrom } from 'rxjs';
+import { Router, RouterLink } from '@angular/router';
 import { FltRescheduleCalendar, RescheduleEvent } from './flt-reschedule-calendar';
 import { CoordinationSlot, FltCoordinationCalendar } from './flt-coordination-calendar';
-
-import { AdminShell } from '../../../../shared/layout/admin-shell/admin-shell';
-import { UiIcon, UiInputSearch, UiSegmented, UiToast } from '../../../../shared/ui';
+import { UiButton, UiIcon, UiInputSearch, UiSelect, UiSelectOption, UiToast, UiDateSelector } from '../../../../shared/ui';
+import { getCurrentYearMonth } from '../../dashboard/dashboard-events.util';
+import { reservationMatchesMonth } from '../reservation-filter.util';
 import {
   FltReservationRecord,
   RequestedEquipmentItem,
@@ -24,9 +25,15 @@ import {
 } from './flt-reservations.models';
 import { FltReservationsService } from './flt-reservations.service';
 import { ReservationRealtimeService, ReservationWsEvent } from '../reservation-realtime.service';
-import { applyReservationWsEvent } from '../reservation-ws.util';
+import { applyRevertedIds, applyReservationWsEvent } from '../reservation-ws.util';
 import { MaintenanceBlock, MaintenanceService } from '../../../admin/maintenance/maintenance.service';
+import { countUpcomingMaintenanceBlocks } from '../../../admin/maintenance/maintenance.util';
 import { MaintenanceCalendarPicker, MaintenanceSlot, ScheduledEvent } from '../../../admin/maintenance/maintenance-calendar-picker';
+import { ReservationExportModal } from '../reservation-export-modal';
+import { exportFltReservationsCsv, ExportDateRange } from '../reservation-export.util';
+import { adminAddReservationPath } from '../admin-reservation-path.util';
+import { ApprovedReservationActionsMenu } from '../approved-reservation-actions-menu';
+import { ReservationApproverTableSkeleton } from '../reservation-approver-table-skeleton';
 
 const STATUS_FILTERS = ['All', 'PENDING', 'APPROVED', 'REJECTED', 'CANCELLED', 'COMPLETED', 'CONFLICT'] as const;
 type StatusFilter = (typeof STATUS_FILTERS)[number];
@@ -39,96 +46,125 @@ interface ConfirmState {
 
 @Component({
   selector: 'app-flt-reservations',
-  imports: [AdminShell, UiIcon, UiInputSearch, UiSegmented, UiToast, FltRescheduleCalendar, FltCoordinationCalendar, MaintenanceCalendarPicker],
+  imports: [ RouterLink, UiButton, UiIcon, UiInputSearch, UiSelect, UiToast, UiDateSelector, FltRescheduleCalendar, FltCoordinationCalendar, MaintenanceCalendarPicker, ReservationExportModal, ApprovedReservationActionsMenu, ReservationApproverTableSkeleton],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <app-admin-shell>
-      <!-- Header -->
-      <div class="flex flex-wrap items-center justify-between gap-3">
+    <!-- Header -->
+      <section class="animate-rise flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 class="text-xl font-black text-gray-900 dark:text-zinc-100">FLT Theater Reservations</h1>
-          <p class="text-sm text-gray-500 dark:text-zinc-400 mt-0.5">Review and manage all FLT reservation requests</p>
+          <h1 class="text-xl font-black text-gray-900">FLT Theater Reservations</h1>
+          <p class="text-sm text-gray-500 mt-0.5">Review and manage all FLT reservation requests</p>
         </div>
         <div class="flex items-center gap-3">
+          <a uiButton [routerLink]="addReservationPath">
+            <ui-icon name="add" class="text-base" />
+            Add Reservation
+          </a>
+          <button type="button" (click)="exportOpen.set(true)"
+            class="flex items-center gap-1.5 rounded-xl border border-gray-200 px-3 py-2 text-xs font-bold text-gray-700 hover:bg-gray-50 transition-colors cursor-pointer">
+            <ui-icon name="download" class="text-base" />
+            Export
+          </button>
           <button type="button" (click)="openMaintenance()"
-            class="flex items-center gap-1.5 rounded-xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 px-3 py-2 text-xs font-bold text-amber-700 dark:text-amber-400 hover:bg-amber-100 dark:hover:bg-amber-900/40 transition-colors cursor-pointer">
+            class="flex items-center gap-1.5 rounded-xl bg-amber-50 border border-amber-200 px-3 py-2 text-xs font-bold text-amber-700 hover:bg-amber-100 transition-colors cursor-pointer">
             <ui-icon name="construction" class="text-base" />
             Maintenance
-            @if (maintenanceBlocks().length > 0) {
-              <span class="ml-1 inline-flex items-center justify-center rounded-full bg-amber-500 text-white w-4 h-4 text-[9px] font-black">{{ maintenanceBlocks().length }}</span>
+            @if (upcomingMaintenanceCount() > 0) {
+              <span class="ml-1 inline-flex items-center justify-center rounded-full bg-amber-500 text-white w-4 h-4 text-[9px] font-black">{{ upcomingMaintenanceCount() }}</span>
             }
           </button>
-          <div class="flex items-center gap-2 text-sm text-gray-500 dark:text-zinc-400">
+          <div class="flex items-center gap-2 text-sm text-gray-500">
             <ui-icon name="event_note" class="text-primary text-base" />
             <span>{{ filtered().length }} of {{ reservations().length }} shown</span>
           </div>
         </div>
-      </div>
+      </section>
 
       <!-- Filters -->
-      <div class="flex flex-col sm:flex-row gap-3">
+      <section class="animate-rise flex flex-nowrap items-center gap-3 overflow-x-auto pb-0.5">
+        <ui-select
+          class="w-44 shrink-0"
+          [value]="statusFilter()"
+          (valueChange)="statusFilter.set($any($event))"
+          placeholder="Filter by status"
+          [options]="statusFilterOptions"
+        />
+        @if (!allMonths()) {
+          <ui-date-selector [value]="activeMonth()" (valueChange)="activeMonth.set($event)" />
+        }
+        <button
+          type="button"
+          (click)="allMonths.set(!allMonths())"
+          class="flex h-9 shrink-0 items-center gap-1.5 rounded-lg border px-3 text-xs font-bold transition-colors cursor-pointer"
+          [class.border-primary]="allMonths()"
+          [class.bg-primary]="allMonths()"
+          [class.text-white]="allMonths()"
+          [class.border-gray-200]="!allMonths()"
+          [class.text-gray-600]="!allMonths()"
+        >
+          <ui-icon name="calendar_month" class="text-sm" />
+          {{ allMonths() ? 'Filter by month' : 'All months' }}
+        </button>
         <ui-input-search
           placeholder="Search by event, department, contact..."
           (valueChange)="search.set($event)"
-          class="flex-1"
+          class="min-w-48 flex-1"
         />
-        <ui-segmented [options]="statusFilters" [value]="statusFilter()" (valueChange)="statusFilter.set($any($event))" />
-      </div>
+      </section>
 
       <!-- Table -->
-      @if (loading()) {
-        <div class="flex items-center justify-center gap-3 py-20 text-gray-400">
-          <ui-icon name="autorenew" class="text-3xl animate-spin" />
-          <span class="text-sm">Loading reservations...</span>
-        </div>
-      } @else if (apiError()) {
-        <div class="flex flex-col items-center justify-center gap-3 py-20 text-center">
-          <ui-icon name="cloud_off" class="text-5xl text-red-300 dark:text-red-700" />
-          <p class="text-sm font-semibold text-red-500 dark:text-red-400">Failed to load reservations</p>
-          <p class="text-xs text-gray-400 dark:text-zinc-500 max-w-xs">The server could not be reached or returned an error. Make sure the backend is running and your session is valid.</p>
-          <button
-            type="button"
-            (click)="load()"
-            class="flex items-center gap-1.5 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white hover:bg-primary/90 transition-colors cursor-pointer mt-1"
-          >
-            <ui-icon name="refresh" class="text-base" />
-            Retry
-          </button>
-        </div>
-      } @else if (filtered().length === 0) {
-        <div class="flex flex-col items-center justify-center gap-3 py-20 text-center">
-          <ui-icon name="event_busy" class="text-5xl text-gray-300 dark:text-zinc-600" />
-          <p class="text-sm font-semibold text-gray-500 dark:text-zinc-400">No reservations found</p>
-          <p class="text-xs text-gray-400 dark:text-zinc-500">Try adjusting your search or filter</p>
-        </div>
-      } @else {
-        <div class="overflow-x-auto rounded-xl ring-1 ring-black/5 dark:ring-white/10 shadow-sm">
-          <table class="w-full text-sm border-collapse bg-white dark:bg-zinc-900">
-            <thead>
-              <tr class="border-b border-gray-100 dark:border-zinc-800 bg-gray-50 dark:bg-zinc-800/60">
-                <th class="px-4 py-3 text-left text-xs font-bold uppercase tracking-wide text-gray-500 dark:text-zinc-400 w-10">#</th>
-                <th class="px-4 py-3 text-left text-xs font-bold uppercase tracking-wide text-gray-500 dark:text-zinc-400">Event</th>
-                <th class="px-4 py-3 text-left text-xs font-bold uppercase tracking-wide text-gray-500 dark:text-zinc-400 hidden md:table-cell">Dept / Org</th>
-                <th class="px-4 py-3 text-left text-xs font-bold uppercase tracking-wide text-gray-500 dark:text-zinc-400 hidden lg:table-cell">Contact</th>
-                <th class="px-4 py-3 text-left text-xs font-bold uppercase tracking-wide text-gray-500 dark:text-zinc-400 hidden xl:table-cell">Dates</th>
-                <th class="px-4 py-3 text-left text-xs font-bold uppercase tracking-wide text-gray-500 dark:text-zinc-400 hidden lg:table-cell">Room / Pax</th>
-                <th class="px-4 py-3 text-left text-xs font-bold uppercase tracking-wide text-gray-500 dark:text-zinc-400 hidden xl:table-cell">Equipment</th>
-                <th class="px-4 py-3 text-left text-xs font-bold uppercase tracking-wide text-gray-500 dark:text-zinc-400">Status</th>
-                <th class="px-4 py-3 text-right text-xs font-bold uppercase tracking-wide text-gray-500 dark:text-zinc-400">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              @for (row of filtered(); track row.id) {
-                <tr class="border-b border-gray-50 dark:border-zinc-800/60 hover:bg-gray-50/60 dark:hover:bg-zinc-800/30 transition-colors">
-                  <td class="px-4 py-3 text-xs text-gray-400 dark:text-zinc-500 font-mono">{{ row.id }}</td>
+      <section class="bg-white/45 backdrop-blur-xl backdrop-saturate-150 ring-1 ring-inset ring-white/60 shadow-[inset_0_1px_0_rgba(255,255,255,0.8),0_16px_40px_-12px_rgba(24,24,27,0.18)] animate-rise flex min-h-0 flex-1 flex-col overflow-hidden rounded-xl">
+        @if (apiError()) {
+          <div class="flex flex-col items-center justify-center gap-3 py-20 text-center">
+            <ui-icon name="cloud_off" class="text-5xl text-red-300" />
+            <p class="text-sm font-semibold text-red-500">Failed to load reservations</p>
+            <p class="text-xs text-gray-400 max-w-xs">The server could not be reached or returned an error. Make sure the backend is running and your session is valid.</p>
+            <button
+              type="button"
+              (click)="load()"
+              class="flex items-center gap-1.5 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white hover:bg-primary/90 transition-colors cursor-pointer mt-1"
+            >
+              <ui-icon name="refresh" class="text-base" />
+              Retry
+            </button>
+          </div>
+        } @else if (!loading() && filtered().length === 0) {
+          <div class="flex flex-col items-center justify-center gap-3 py-20 text-center">
+            <ui-icon name="event_busy" class="text-5xl text-gray-300" />
+            <p class="text-sm font-semibold text-gray-500">No reservations found</p>
+            <p class="text-xs text-gray-400">Try adjusting your search or filter</p>
+          </div>
+        } @else {
+          <div class="min-h-0 flex-1 overflow-x-auto">
+            <table class="w-full text-sm border-collapse bg-white">
+              <thead class="sticky top-0 z-10">
+                <tr class="border-b border-gray-100 bg-gray-50">
+                  <th class="px-4 py-3 text-left text-xs font-bold uppercase tracking-wide text-gray-500 w-10">#</th>
+                  <th class="px-4 py-3 text-left text-xs font-bold uppercase tracking-wide text-gray-500">Event</th>
+                  <th class="px-4 py-3 text-left text-xs font-bold uppercase tracking-wide text-gray-500 hidden md:table-cell">Dept / Org</th>
+                  <th class="px-4 py-3 text-left text-xs font-bold uppercase tracking-wide text-gray-500 hidden lg:table-cell">Contact</th>
+                  <th class="px-4 py-3 text-left text-xs font-bold uppercase tracking-wide text-gray-500 hidden xl:table-cell">Dates</th>
+                  <th class="px-4 py-3 text-left text-xs font-bold uppercase tracking-wide text-gray-500 hidden lg:table-cell">Room / Pax</th>
+                  <th class="px-4 py-3 text-left text-xs font-bold uppercase tracking-wide text-gray-500 hidden xl:table-cell">Equipment</th>
+                  <th class="px-4 py-3 text-left text-xs font-bold uppercase tracking-wide text-gray-500">Status</th>
+                  <th class="px-4 py-3 text-right text-xs font-bold uppercase tracking-wide text-gray-500">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                @if (loading()) {
+                  <app-reservation-approver-table-skeleton />
+                } @else {
+                  @for (row of filtered(); track row.id) {
+                <tr class="border-b border-gray-50 hover:bg-gray-50/60 transition-colors">
+                  <td class="px-4 py-3 text-xs text-gray-400 font-mono">{{ row.id }}</td>
 
                   <!-- Event -->
-                  <td class="px-4 py-3 max-w-[200px] cursor-pointer hover:bg-gray-50/80 dark:hover:bg-zinc-800/40 transition-colors" (click)="openDetails(row)">
-                    <p class="font-semibold text-gray-900 dark:text-zinc-100 truncate">{{ row.eventTitle }}</p>
-                    <p class="text-xs text-gray-500 dark:text-zinc-400 capitalize">{{ row.eventType }}</p>
-                    <p class="text-[11px] text-gray-400 dark:text-zinc-500 mt-0.5">{{ formatDate(row.createdAt) }}</p>
+                  <td class="px-4 py-3 max-w-[200px] cursor-pointer hover:bg-gray-50/80 transition-colors" (click)="openDetails(row)">
+                    <p class="font-semibold text-gray-900 truncate">{{ row.eventTitle }}</p>
+                    <p class="text-xs text-gray-500 capitalize">{{ row.eventType }}</p>
+                    <p class="text-[11px] text-gray-400 mt-0.5">{{ formatDate(row.createdAt) }}</p>
                     @if (row.additionalInstructions) {
-                      <p class="mt-1 text-[10px] italic text-amber-600 dark:text-amber-400 truncate max-w-[180px]" [title]="row.additionalInstructions">
+                      <p class="mt-1 text-[10px] italic text-amber-600 truncate max-w-[180px]" [title]="row.additionalInstructions">
                         📝 {{ row.additionalInstructions }}
                       </p>
                     }
@@ -137,21 +173,21 @@ interface ConfirmState {
 
                   <!-- Dept / Org -->
                   <td class="px-4 py-3 hidden md:table-cell max-w-[160px]">
-                    <p class="text-xs font-medium text-gray-700 dark:text-zinc-300 truncate">{{ row.department }}</p>
-                    <p class="text-xs text-gray-400 dark:text-zinc-500 truncate">{{ row.organization }}</p>
+                    <p class="text-xs font-medium text-gray-700 truncate">{{ row.department }}</p>
+                    <p class="text-xs text-gray-400 truncate">{{ row.organization }}</p>
                   </td>
 
                   <!-- Contact -->
                   <td class="px-4 py-3 hidden lg:table-cell max-w-[160px]">
-                    <p class="text-xs font-medium text-gray-700 dark:text-zinc-300 truncate">{{ row.contactPerson }}</p>
-                    <p class="text-xs text-gray-400 dark:text-zinc-500 truncate">{{ row.contactEmail }}</p>
-                    <p class="text-xs text-gray-400 dark:text-zinc-500">{{ row.contactNumber }}</p>
+                    <p class="text-xs font-medium text-gray-700 truncate">{{ row.contactPerson }}</p>
+                    <p class="text-xs text-gray-400 truncate">{{ row.contactEmail }}</p>
+                    <p class="text-xs text-gray-400">{{ row.contactNumber }}</p>
                   </td>
 
                   <!-- Dates -->
                   <td class="px-4 py-3 hidden xl:table-cell max-w-[180px]">
                     @for (slot of parseDates(row.reservedDates); track slot.date) {
-                      <div class="text-[11px] leading-tight text-gray-600 dark:text-zinc-400 flex items-center gap-1 mb-0.5">
+                      <div class="text-[11px] leading-tight text-gray-600 flex items-center gap-1 mb-0.5">
                         <ui-icon name="calendar_today" class="text-[10px] text-primary shrink-0" />
                         <span>{{ slot.date }}</span>
                         <span class="text-gray-400">{{ slot.startTime }}–{{ slot.endTime }}</span>
@@ -161,9 +197,9 @@ interface ConfirmState {
 
                   <!-- Room / Pax -->
                   <td class="px-4 py-3 hidden lg:table-cell max-w-[130px]">
-                    <p class="text-xs font-medium text-gray-700 dark:text-zinc-300">{{ row.roomType ? getRoomTypeLabel(row.roomType) : '—' }}</p>
+                    <p class="text-xs font-medium text-gray-700">{{ row.roomType ? getRoomTypeLabel(row.roomType) : '—' }}</p>
                     @if (row.expectedAttendees) {
-                      <p class="text-xs text-gray-400 dark:text-zinc-500">{{ row.expectedAttendees }} pax</p>
+                      <p class="text-xs text-gray-400">{{ row.expectedAttendees }} pax</p>
                     }
                   </td>
 
@@ -171,13 +207,13 @@ interface ConfirmState {
                   <td class="px-4 py-3 hidden xl:table-cell max-w-[140px]">
                     @if (parseEquipment(row.requestedEquipment).length > 0) {
                       @for (eq of parseEquipment(row.requestedEquipment); track eq.id) {
-                        <div class="text-[11px] text-gray-600 dark:text-zinc-400 flex items-center gap-1 mb-0.5">
+                        <div class="text-[11px] text-gray-600 flex items-center gap-1 mb-0.5">
                           <ui-icon name="devices" class="text-[10px] shrink-0" />
                           {{ eq.name }}
                         </div>
                       }
                     } @else {
-                      <span class="text-xs text-gray-400 dark:text-zinc-500 italic">None</span>
+                      <span class="text-xs text-gray-400 italic">None</span>
                     }
                   </td>
 
@@ -187,31 +223,19 @@ interface ConfirmState {
                       class="inline-flex items-center rounded-full px-2.5 py-1 text-xs font-bold uppercase tracking-wide"
                       [class.bg-amber-100]="row.status === 'PENDING'"
                       [class.text-amber-700]="row.status === 'PENDING'"
-                      [class.dark:bg-amber-950]="row.status === 'PENDING'"
-                      [class.dark:text-amber-400]="row.status === 'PENDING'"
                       [class.bg-emerald-100]="row.status === 'APPROVED'"
                       [class.text-emerald-700]="row.status === 'APPROVED'"
-                      [class.dark:bg-emerald-950]="row.status === 'APPROVED'"
-                      [class.dark:text-emerald-400]="row.status === 'APPROVED'"
                       [class.bg-red-100]="row.status === 'REJECTED'"
                       [class.text-red-700]="row.status === 'REJECTED'"
-                      [class.dark:bg-red-950]="row.status === 'REJECTED'"
-                      [class.dark:text-red-400]="row.status === 'REJECTED'"
                       [class.bg-gray-100]="row.status === 'CANCELLED'"
                       [class.text-gray-500]="row.status === 'CANCELLED'"
-                      [class.dark:bg-zinc-800]="row.status === 'CANCELLED'"
-                      [class.dark:text-zinc-400]="row.status === 'CANCELLED'"
                       [class.bg-teal-100]="row.status === 'COMPLETED'"
                       [class.text-teal-700]="row.status === 'COMPLETED'"
-                      [class.dark:bg-teal-950]="row.status === 'COMPLETED'"
-                      [class.dark:text-teal-400]="row.status === 'COMPLETED'"
                       [class.bg-orange-100]="row.status === 'CONFLICT'"
                       [class.text-orange-700]="row.status === 'CONFLICT'"
-                      [class.dark:bg-orange-950]="row.status === 'CONFLICT'"
-                      [class.dark:text-orange-400]="row.status === 'CONFLICT'"
                     >{{ row.status }}</span>
                     @if (row.status === 'PENDING' && hasApprovedOverlap(row)) {
-                      <p class="mt-1 text-[10px] font-semibold text-orange-600 dark:text-orange-400">⚠ Overlaps approved schedule</p>
+                      <p class="mt-1 text-[10px] font-semibold text-orange-600">⚠ Conflict schedule</p>
                     }
                     @if (row.status === 'COMPLETED' && row.satisfactionRating) {
                       <div class="flex items-center gap-0.5 mt-1.5" [title]="row.satisfactionRating + ' / 5'">
@@ -230,7 +254,7 @@ interface ConfirmState {
                           type="button"
                           (click)="requestConfirm(row, 'APPROVED')"
                           [disabled]="acting() === row.id"
-                          class="flex items-center gap-1 rounded-lg bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 px-2.5 py-1.5 text-xs font-semibold text-emerald-700 dark:text-emerald-400 hover:bg-emerald-100 dark:hover:bg-emerald-900/40 transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                          class="flex items-center gap-1 rounded-lg bg-emerald-50 border border-emerald-200 px-2.5 py-1.5 text-xs font-semibold text-emerald-700 hover:bg-emerald-100 transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                           <ui-icon name="check_circle" class="text-sm" />
                           Approve
@@ -239,7 +263,7 @@ interface ConfirmState {
                           type="button"
                           (click)="requestConfirm(row, 'REJECTED')"
                           [disabled]="acting() === row.id"
-                          class="flex items-center gap-1 rounded-lg bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-800 px-2.5 py-1.5 text-xs font-semibold text-red-700 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-900/40 transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                          class="flex items-center gap-1 rounded-lg bg-red-50 border border-red-200 px-2.5 py-1.5 text-xs font-semibold text-red-700 hover:bg-red-100 transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                           <ui-icon name="cancel" class="text-sm" />
                           Reject
@@ -251,19 +275,24 @@ interface ConfirmState {
                           type="button"
                           (click)="requestConfirm(row, 'REJECTED')"
                           [disabled]="acting() === row.id"
-                          class="flex items-center gap-1 rounded-lg bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-800 px-2.5 py-1.5 text-xs font-semibold text-red-700 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-900/40 transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                          class="flex items-center gap-1 rounded-lg bg-red-50 border border-red-200 px-2.5 py-1.5 text-xs font-semibold text-red-700 hover:bg-red-100 transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                           <ui-icon name="cancel" class="text-sm" />
                           Reject
                         </button>
                       </div>
                     } @else if (row.status === 'APPROVED') {
-                      <div class="flex items-center justify-end gap-1.5 flex-wrap">
+                      <app-approved-reservation-actions-menu
+                        [rowId]="row.id"
+                        [expanded]="isApprovedActionsExpanded(row.id)"
+                        (expandedChange)="setApprovedActionsExpanded(row.id, $event)"
+                        [disabled]="acting() === row.id"
+                      >
                         <button
                           type="button"
                           (click)="openCoordination(row)"
                           [disabled]="acting() === row.id"
-                          class="flex items-center gap-1 rounded-lg bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 px-2.5 py-1.5 text-xs font-semibold text-amber-700 dark:text-amber-400 hover:bg-amber-100 dark:hover:bg-amber-900/40 transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                          class="flex items-center gap-1 rounded-lg bg-amber-50 border border-amber-200 px-2.5 py-1.5 text-xs font-semibold text-amber-700 hover:bg-amber-100 transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                           [title]="row.coordinationDate ? 'Update coordination: ' + row.coordinationDate : 'Set coordination meeting'"
                         >
                           <ui-icon name="handshake" class="text-sm" />
@@ -273,7 +302,7 @@ interface ConfirmState {
                           type="button"
                           (click)="openReschedule(row)"
                           [disabled]="acting() === row.id"
-                          class="flex items-center gap-1 rounded-lg bg-sky-50 dark:bg-sky-950/40 border border-sky-200 dark:border-sky-800 px-2.5 py-1.5 text-xs font-semibold text-sky-700 dark:text-sky-400 hover:bg-sky-100 dark:hover:bg-sky-900/40 transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                          class="flex items-center gap-1 rounded-lg bg-sky-50 border border-sky-200 px-2.5 py-1.5 text-xs font-semibold text-sky-700 hover:bg-sky-100 transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                           <ui-icon name="edit_calendar" class="text-sm" />
                           Reschedule
@@ -282,7 +311,7 @@ interface ConfirmState {
                           type="button"
                           (click)="requestConfirm(row, 'COMPLETED')"
                           [disabled]="acting() === row.id"
-                          class="flex items-center gap-1 rounded-lg bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 px-2.5 py-1.5 text-xs font-semibold text-emerald-700 dark:text-emerald-400 hover:bg-emerald-100 dark:hover:bg-emerald-900/40 transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                          class="flex items-center gap-1 rounded-lg bg-emerald-50 border border-emerald-200 px-2.5 py-1.5 text-xs font-semibold text-emerald-700 hover:bg-emerald-100 transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                           <ui-icon name="task_alt" class="text-sm" />
                           Complete
@@ -292,7 +321,7 @@ interface ConfirmState {
                             type="button"
                             (click)="downloadReservationForm(row)"
                             [disabled]="acting() === row.id"
-                            class="flex items-center gap-1 rounded-lg bg-indigo-50 dark:bg-indigo-950/40 border border-indigo-200 dark:border-indigo-800 px-2.5 py-1.5 text-xs font-semibold text-indigo-700 dark:text-indigo-400 hover:bg-indigo-100 dark:hover:bg-indigo-900/40 transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                            class="flex items-center gap-1 rounded-lg bg-indigo-50 border border-indigo-200 px-2.5 py-1.5 text-xs font-semibold text-indigo-700 hover:bg-indigo-100 transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                             title="Download reservation form"
                           >
                             <ui-icon name="download" class="text-sm" />
@@ -303,98 +332,100 @@ interface ConfirmState {
                           type="button"
                           (click)="requestConfirm(row, 'CANCELLED')"
                           [disabled]="acting() === row.id"
-                          class="flex items-center gap-1 rounded-lg bg-gray-100 dark:bg-zinc-700 border border-gray-200 dark:border-zinc-600 px-2.5 py-1.5 text-xs font-semibold text-gray-600 dark:text-zinc-300 hover:bg-gray-200 dark:hover:bg-zinc-600 transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                          class="flex items-center gap-1 rounded-lg bg-gray-100 border border-gray-200 px-2.5 py-1.5 text-xs font-semibold text-gray-600 hover:bg-gray-200 transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                           <ui-icon name="block" class="text-sm" />
                           Cancel
                         </button>
-                      </div>
+                      </app-approved-reservation-actions-menu>
                     } @else {
-                      <span class="text-xs text-gray-300 dark:text-zinc-600 italic">—</span>
+                      <span class="text-xs text-gray-300 italic">—</span>
                     }
                   </td>
                 </tr>
-              }
-            </tbody>
-          </table>
-        </div>
-      }
+                  }
+                }
+              </tbody>
+            </table>
+          </div>
+        }
+      </section>
 
       <!-- Event Details Summary Dialog -->
       @if (detailsTarget()) {
         <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4" (click)="closeDetails()">
-          <div class="w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-2xl bg-white dark:bg-zinc-900 shadow-2xl p-6 flex flex-col gap-5" (click)="$event.stopPropagation()">
+          <div class="w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-2xl bg-white shadow-2xl p-6 flex flex-col gap-5" (click)="$event.stopPropagation()">
             <div class="flex items-start justify-between gap-3">
               <div>
-                <h2 class="text-lg font-black text-gray-900 dark:text-zinc-100">Event Summary</h2>
-                <p class="text-xs text-gray-500 dark:text-zinc-400 mt-0.5">Reservation #{{ detailsTarget()!.id }} · {{ detailsTarget()!.status }}</p>
+                <h2 class="text-lg font-black text-gray-900">Event Summary</h2>
+                <p class="text-xs text-gray-500 mt-0.5">Reservation #{{ detailsTarget()!.id }} · {{ detailsTarget()!.status }}</p>
               </div>
               <button
                 type="button"
                 (click)="closeDetails()"
-                class="flex h-8 w-8 items-center justify-center rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 dark:hover:bg-zinc-800 transition-colors cursor-pointer"
+                class="flex h-8 w-8 items-center justify-center rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors cursor-pointer"
               >
                 <ui-icon name="close" class="text-lg" />
               </button>
             </div>
 
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
-              <div class="rounded-xl border border-gray-200 dark:border-zinc-700 p-3">
+              <div class="rounded-xl border border-gray-200 p-3">
                 <p class="text-xs uppercase tracking-wide font-bold text-gray-400">Event</p>
-                <p class="font-semibold text-gray-900 dark:text-zinc-100 mt-1">{{ detailsTarget()!.eventTitle }}</p>
-                <p class="text-xs text-gray-500 dark:text-zinc-400 capitalize">{{ detailsTarget()!.eventType }}</p>
+                <p class="font-semibold text-gray-900 mt-1">{{ detailsTarget()!.eventTitle }}</p>
+                <p class="text-xs text-gray-500 capitalize">{{ detailsTarget()!.eventType }}</p>
               </div>
-              <div class="rounded-xl border border-gray-200 dark:border-zinc-700 p-3">
+              <div class="rounded-xl border border-gray-200 p-3">
                 <p class="text-xs uppercase tracking-wide font-bold text-gray-400">Organization</p>
-                <p class="font-semibold text-gray-900 dark:text-zinc-100 mt-1">{{ detailsTarget()!.organization }}</p>
-                <p class="text-xs text-gray-500 dark:text-zinc-400">{{ detailsTarget()!.department }}</p>
+                <p class="font-semibold text-gray-900 mt-1">{{ detailsTarget()!.organization }}</p>
+                <p class="text-xs text-gray-500">{{ detailsTarget()!.department }}</p>
               </div>
-              <div class="rounded-xl border border-gray-200 dark:border-zinc-700 p-3">
+              <div class="rounded-xl border border-gray-200 p-3">
                 <p class="text-xs uppercase tracking-wide font-bold text-gray-400">Contact</p>
-                <p class="font-semibold text-gray-900 dark:text-zinc-100 mt-1">{{ detailsTarget()!.contactPerson }}</p>
-                <p class="text-xs text-gray-500 dark:text-zinc-400">{{ detailsTarget()!.contactEmail }}</p>
-                <p class="text-xs text-gray-500 dark:text-zinc-400">{{ detailsTarget()!.contactNumber }}</p>
+                <p class="font-semibold text-gray-900 mt-1">{{ detailsTarget()!.contactPerson }}</p>
+                <p class="text-xs text-gray-500">{{ detailsTarget()!.contactEmail }}</p>
+                <p class="text-xs text-gray-500">{{ detailsTarget()!.contactNumber }}</p>
               </div>
-              <div class="rounded-xl border border-gray-200 dark:border-zinc-700 p-3">
+              <div class="rounded-xl border border-gray-200 p-3">
                 <p class="text-xs uppercase tracking-wide font-bold text-gray-400">Room / Attendees</p>
-                <p class="font-semibold text-gray-900 dark:text-zinc-100 mt-1">{{ detailsTarget()!.roomType ? getRoomTypeLabel(detailsTarget()!.roomType) : '—' }}</p>
-                <p class="text-xs text-gray-500 dark:text-zinc-400">{{ detailsTarget()!.expectedAttendees || '—' }} pax</p>
+                <p class="font-semibold text-gray-900 mt-1">{{ detailsTarget()!.roomType ? getRoomTypeLabel(detailsTarget()!.roomType) : '—' }}</p>
+                <p class="text-xs text-gray-500">{{ detailsTarget()!.expectedAttendees || '—' }} pax</p>
               </div>
             </div>
 
-            <div class="rounded-xl border border-gray-200 dark:border-zinc-700 p-4">
+            <div class="rounded-xl border border-gray-200 p-4">
               <p class="text-xs uppercase tracking-wide font-bold text-gray-400 mb-2">Reserved Dates</p>
               <div class="flex flex-col gap-1.5">
                 @for (slot of parseDates(detailsTarget()!.reservedDates); track slot.date + '-' + slot.startTime) {
-                  <p class="text-sm text-gray-700 dark:text-zinc-300">• {{ slot.date }} · {{ slot.startTime }} – {{ slot.endTime }}</p>
+                  <p class="text-sm text-gray-700">• {{ slot.date }} · {{ slot.startTime }} – {{ slot.endTime }}</p>
                 }
               </div>
             </div>
 
-            <div class="rounded-xl border border-gray-200 dark:border-zinc-700 p-4">
+            <div class="rounded-xl border border-gray-200 p-4">
               <p class="text-xs uppercase tracking-wide font-bold text-gray-400 mb-2">Requested Equipment</p>
               @if (parseEquipment(detailsTarget()!.requestedEquipment).length > 0) {
                 <div class="flex flex-wrap gap-2">
                   @for (eq of parseEquipment(detailsTarget()!.requestedEquipment); track eq.id) {
-                    <span class="inline-flex items-center rounded-full bg-gray-100 dark:bg-zinc-800 px-2.5 py-1 text-xs text-gray-700 dark:text-zinc-300">{{ eq.name }}</span>
+                    <span class="inline-flex items-center rounded-full bg-gray-100 px-2.5 py-1 text-xs text-gray-700">{{ eq.name }}</span>
                   }
                 </div>
               } @else {
-                <p class="text-sm italic text-gray-400 dark:text-zinc-500">No equipment requested.</p>
+                <p class="text-sm italic text-gray-400">No equipment requested.</p>
               }
             </div>
 
             @if (detailsTarget()!.coordinationDate) {
-              <div class="rounded-xl border border-amber-200 dark:border-amber-800 bg-amber-50/70 dark:bg-amber-950/20 p-4">
-                <p class="text-xs uppercase tracking-wide font-bold text-amber-600 dark:text-amber-400 mb-1">Coordination Meeting</p>
-                <p class="text-sm text-amber-900 dark:text-amber-200">{{ detailsTarget()!.coordinationDate }} · {{ detailsTarget()!.coordinationStartTime }} – {{ detailsTarget()!.coordinationEndTime }}</p>
+              <div class="rounded-xl border border-amber-200 bg-amber-50/70 p-4">
+                <p class="text-xs uppercase tracking-wide font-bold text-amber-600 mb-1">Coordination Meeting</p>
+                <p class="text-sm text-amber-900">{{ detailsTarget()!.coordinationDate }} · {{ detailsTarget()!.coordinationStartTime }} – {{ detailsTarget()!.coordinationEndTime }}</p>
               </div>
             }
 
             @if (detailsTarget()!.additionalInstructions) {
-              <div class="rounded-xl border border-gray-200 dark:border-zinc-700 p-4">
+              <div class="rounded-xl border border-gray-200 p-4">
                 <p class="text-xs uppercase tracking-wide font-bold text-gray-400 mb-1">Additional Instructions</p>
-                <p class="text-sm text-gray-700 dark:text-zinc-300 whitespace-pre-wrap">{{ detailsTarget()!.additionalInstructions }}</p>
+                <p class="text-sm text-gray-700 whitespace-pre-wrap">{{ detailsTarget()!.additionalInstructions }}</p>
               </div>
             }
 
@@ -414,30 +445,30 @@ interface ConfirmState {
       <!-- Confirmation Dialog -->
       @if (confirm()) {
         <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4" (click)="confirm.set(null)">
-          <div class="w-full max-w-sm rounded-2xl bg-white dark:bg-zinc-900 shadow-2xl p-6 flex flex-col gap-4" (click)="$event.stopPropagation()">
+          <div class="w-full max-w-sm rounded-2xl bg-white shadow-2xl p-6 flex flex-col gap-4" (click)="$event.stopPropagation()">
             <div class="flex items-start gap-3">
               @if (confirm()!.action === 'APPROVED') {
-                <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-emerald-100 dark:bg-emerald-950/60">
-                  <ui-icon name="check_circle" class="text-emerald-600 dark:text-emerald-400 text-xl" />
+                <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-emerald-100">
+                  <ui-icon name="check_circle" class="text-emerald-600 text-xl" />
                 </div>
               } @else if (confirm()!.action === 'REJECTED') {
-                <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-red-100 dark:bg-red-950/60">
-                  <ui-icon name="cancel" class="text-red-600 dark:text-red-400 text-xl" />
+                <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-red-100">
+                  <ui-icon name="cancel" class="text-red-600 text-xl" />
                 </div>
               } @else if (confirm()!.action === 'COMPLETED') {
-                <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-teal-100 dark:bg-teal-950/60">
-                  <ui-icon name="task_alt" class="text-teal-600 dark:text-teal-400 text-xl" />
+                <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-teal-100">
+                  <ui-icon name="task_alt" class="text-teal-600 text-xl" />
                 </div>
               } @else {
-                <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-gray-100 dark:bg-zinc-800">
-                  <ui-icon name="block" class="text-gray-600 dark:text-zinc-400 text-xl" />
+                <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-gray-100">
+                  <ui-icon name="block" class="text-gray-600 text-xl" />
                 </div>
               }
               <div class="flex-1 min-w-0">
-                <h2 class="text-sm font-bold text-gray-900 dark:text-zinc-100">
+                <h2 class="text-sm font-bold text-gray-900">
                   {{ actionLabel(confirm()!.action) }} Reservation
                 </h2>
-                <p class="text-xs text-gray-500 dark:text-zinc-400 mt-1">
+                <p class="text-xs text-gray-500 mt-1">
                   Are you sure you want to mark the reservation for
                   <strong>"{{ confirm()!.eventTitle }}"</strong> as <strong class="lowercase">{{ confirm()!.action.toLowerCase() }}</strong>? This cannot be undone.
                 </p>
@@ -447,7 +478,7 @@ interface ConfirmState {
               <button
                 type="button"
                 (click)="confirm.set(null)"
-                class="rounded-lg border border-gray-200 dark:border-zinc-700 px-4 py-2 text-sm font-semibold text-gray-600 dark:text-zinc-300 hover:bg-gray-50 dark:hover:bg-zinc-800 cursor-pointer transition-colors"
+                class="rounded-lg border border-gray-200 px-4 py-2 text-sm font-semibold text-gray-600 hover:bg-gray-50 cursor-pointer transition-colors"
               >
                 Cancel
               </button>
@@ -478,8 +509,14 @@ interface ConfirmState {
 
       <!-- Toast -->
       <ui-toast [message]="toast()" (dismissed)="toast.set('')" />
-    </app-admin-shell>
 
+    @if (exportOpen()) {
+      <app-reservation-export-modal
+        serviceName="FLT"
+        (closed)="exportOpen.set(false)"
+        (exported)="runExport($event)"
+      />
+    }
     <!-- ─── Coordination Calendar Overlay ─── -->
     @if (coordinationTarget()) {
       <app-flt-coordination-calendar
@@ -521,23 +558,49 @@ interface ConfirmState {
 export class FltReservations implements OnInit, OnDestroy {
   private readonly svc  = inject(FltReservationsService);
   private readonly http = inject(HttpClient);
+  private readonly router = inject(Router);
   private readonly maintSvc = inject(MaintenanceService);
   private readonly realtime = inject(ReservationRealtimeService);
+
+  protected readonly addReservationPath = adminAddReservationPath('flt', this.router.url);
   private wsSub?: Subscription;
 
   readonly loading = signal(true);
   readonly apiError = signal(false);
   readonly reservations = signal<FltReservationRecord[]>([]);
   readonly search = signal('');
-  readonly statusFilter = signal<StatusFilter>('All');
+  readonly statusFilter = signal<StatusFilter>('PENDING');
+  readonly activeMonth = signal(getCurrentYearMonth());
+  readonly allMonths = signal(false);
   readonly acting = signal<number | null>(null);
   readonly confirm = signal<ConfirmState | null>(null);
   readonly detailsTarget = signal<FltReservationRecord | null>(null);
   readonly toast = signal('');
+  readonly exportOpen = signal(false);
+  readonly expandedApprovedActions = signal<Set<number>>(new Set());
+
+  protected isApprovedActionsExpanded(id: number): boolean {
+    return this.expandedApprovedActions().has(id);
+  }
+
+  protected setApprovedActionsExpanded(id: number, expanded: boolean): void {
+    this.expandedApprovedActions.update(set => {
+      const next = new Set(set);
+      if (expanded) {
+        next.add(id);
+      } else {
+        next.delete(id);
+      }
+      return next;
+    });
+  }
 
   // Maintenance
   readonly showMaintenance = signal(false);
   readonly maintenanceBlocks = signal<MaintenanceBlock[]>([]);
+  readonly upcomingMaintenanceCount = computed(() =>
+    countUpcomingMaintenanceBlocks(this.maintenanceBlocks()),
+  );
   readonly maintSaving = signal(false);
 
   /** Approved events to show in the maintenance calendar (read-only context) */
@@ -626,11 +689,12 @@ export class FltReservations implements OnInit, OnDestroy {
     return { date: row.coordinationDate, startTime: row.coordinationStartTime, endTime: row.coordinationEndTime };
   });
 
-  readonly statusFilters = [...STATUS_FILTERS];
+  readonly statusFilterOptions: UiSelectOption[] = STATUS_FILTERS.map((s) => ({ value: s, label: s }));
 
   readonly filtered = computed(() => {
     const q = this.search().toLowerCase();
     const status = this.statusFilter();
+    const month = this.allMonths() ? '' : this.activeMonth();
     const rows = this.reservations().filter(r => {
       const matchStatus = status === 'All' || r.status === status;
       const matchSearch =
@@ -640,17 +704,17 @@ export class FltReservations implements OnInit, OnDestroy {
         r.organization.toLowerCase().includes(q) ||
         r.contactPerson.toLowerCase().includes(q) ||
         r.contactEmail.toLowerCase().includes(q);
-      return matchStatus && matchSearch;
+      const matchMonth = reservationMatchesMonth(
+        r.reservedDates,
+        r.coordinationDate,
+        r.createdAt,
+        month,
+      );
+      return matchStatus && matchSearch && matchMonth;
     });
-    return [...rows].sort((a, b) => {
-      const aPending = a.status === 'PENDING';
-      const bPending = b.status === 'PENDING';
-      if (aPending && bPending) {
-        return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
-      }
-      if (aPending !== bPending) return aPending ? -1 : 1;
-      return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
-    });
+    return [...rows].sort(
+      (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime(),
+    );
   });
 
   ngOnInit(): void {
@@ -683,6 +747,12 @@ export class FltReservations implements OnInit, OnDestroy {
     });
   }
 
+  runExport(range: ExportDateRange): void {
+    exportFltReservationsCsv(this.reservations(), range);
+    this.exportOpen.set(false);
+    this.toast.set('FLT reservations exported to CSV');
+  }
+
   requestConfirm(row: FltReservationRecord, action: ReservationStatus): void {
     this.confirm.set({ id: row.id, action, eventTitle: row.eventTitle });
   }
@@ -710,12 +780,16 @@ export class FltReservations implements OnInit, OnDestroy {
             for (const cid of res.conflictedIds ?? []) {
               updated = updated.map(r => r.id === cid ? { ...r, status: 'CONFLICT' as ReservationStatus } : r);
             }
+            updated = applyRevertedIds(updated, res.revertedIds);
             return updated;
           });
           const conflictNote = res.conflictedIds?.length
             ? ` ${res.conflictedIds.length} conflicting request(s) marked as CONFLICT.`
             : '';
-          this.toast.set(`Reservation ${state.action.toLowerCase()} successfully.${conflictNote}`);
+          const revertNote = res.revertedIds?.length
+            ? ` ${res.revertedIds.length} conflict(s) reverted to PENDING.`
+            : '';
+          this.toast.set(`Reservation ${state.action.toLowerCase()} successfully.${conflictNote}${revertNote}`);
         } else {
           this.toast.set(res.blockedReason ?? res.message ?? 'Action failed. Please try again.');
         }
@@ -778,8 +852,15 @@ export class FltReservations implements OnInit, OnDestroy {
         this.rescheduleSaving.set(false);
         if (res.success) {
           const newDates = JSON.stringify(slots);
-          this.reservations.update(list => list.map(r => r.id === target.id ? { ...r, reservedDates: newDates } : r));
-          this.toast.set('Reservation rescheduled successfully.');
+          this.reservations.update(list => {
+            let updated = list.map(r => r.id === target.id ? { ...r, reservedDates: newDates } : r);
+            updated = applyRevertedIds(updated, res.revertedIds);
+            return updated;
+          });
+          const revertNote = res.revertedIds?.length
+            ? ` ${res.revertedIds.length} conflict(s) reverted to PENDING.`
+            : '';
+          this.toast.set(`Reservation rescheduled successfully.${revertNote}`);
           this.closeReschedule();
         } else {
           this.toast.set('Failed to reschedule reservation.');
@@ -865,8 +946,7 @@ export class FltReservations implements OnInit, OnDestroy {
         ...this.parseDates(other.reservedDates),
         ...(other.coordinationDate && other.coordinationStartTime && other.coordinationEndTime
           ? [{ date: other.coordinationDate, startTime: other.coordinationStartTime, endTime: other.coordinationEndTime }]
-          : []),
-      ];
+          : [])];
       if (this.slotsOverlap(targetSlots, otherSlots)) return true;
     }
     return false;
@@ -917,8 +997,7 @@ export class FltReservations implements OnInit, OnDestroy {
       // Dynamic imports so these large libs are only loaded when needed
       const [PizZip, Docxtemplater] = await Promise.all([
         import('pizzip').then(m => m.default),
-        import('docxtemplater').then(m => m.default),
-      ]);
+        import('docxtemplater').then(m => m.default)]);
 
       const templateBuf = await firstValueFrom(
         this.http.get('/flt-reservation-template.docx', { responseType: 'arraybuffer' })

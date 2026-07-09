@@ -18,10 +18,11 @@ import {
   ReservedDateSlot,
 } from './gymnasium-reservation.models';
 import { GymReservationService } from './gymnasium-reservation.service';
+import { ReservationSubmittedModal } from '../reservation-submitted-modal';
 
 @Component({
   selector: 'app-gymnasium-stepper',
-  imports: [ReactiveFormsModule, RouterLink, UiButton, UiInput, UiLabel, UiIcon],
+  imports: [ReactiveFormsModule, RouterLink, UiButton, UiInput, UiLabel, UiIcon, ReservationSubmittedModal],
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: {
     class: 'flex flex-col h-full min-h-0',
@@ -71,7 +72,7 @@ import { GymReservationService } from './gymnasium-reservation.service';
         <div class="flex flex-col gap-4 animate-fade-in">
           <div class="flex items-start justify-between gap-3">
             <div>
-              <h2 class="text-lg font-bold text-gray-900 dark:text-zinc-100">Your Selected Dates</h2>
+              <h2 class="text-lg font-bold text-gray-900">Your Selected Dates</h2>
               <p class="text-sm text-gray-500 mt-0.5">Review your date and time selections.</p>
             </div>
             <button type="button" (click)="addMoreDates.emit()"
@@ -82,9 +83,9 @@ import { GymReservationService } from './gymnasium-reservation.service';
           </div>
 
           @if (dateSlots().length === 0) {
-            <div class="flex flex-col items-center justify-center gap-3 py-10 text-center border-2 border-dashed border-gray-300 rounded-xl bg-gray-50 dark:bg-zinc-800/40 dark:border-zinc-700">
-              <ui-icon name="calendar_month" class="text-4xl text-gray-300 dark:text-zinc-600" />
-              <p class="text-sm font-semibold text-gray-500 dark:text-zinc-400">No dates selected</p>
+            <div class="flex flex-col items-center justify-center gap-3 py-10 text-center border-2 border-dashed border-gray-300 rounded-xl bg-gray-50">
+              <ui-icon name="calendar_month" class="text-4xl text-gray-300" />
+              <p class="text-sm font-semibold text-gray-500">No dates selected</p>
               <button type="button" (click)="addMoreDates.emit()"
                 class="flex items-center gap-1.5 text-sm font-semibold text-primary hover:underline cursor-pointer">
                 <ui-icon name="calendar_month" class="text-base" />
@@ -94,23 +95,23 @@ import { GymReservationService } from './gymnasium-reservation.service';
           } @else {
             <div class="flex flex-col gap-3">
               @for (slot of dateSlots(); track slot.date) {
-                <div class="rounded-xl border border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 p-4 shadow-sm">
+                <div class="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
                   <div class="flex items-center justify-between mb-3">
                     <div class="flex items-center gap-2">
                       <div class="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10">
                         <ui-icon name="event" class="text-primary text-base" />
                       </div>
-                      <span class="font-semibold text-sm text-gray-900 dark:text-zinc-100">{{ formatDateDisplay(slot.date) }}</span>
+                      <span class="font-semibold text-sm text-gray-900">{{ formatDateDisplay(slot.date) }}</span>
                     </div>
                     <button type="button" (click)="removeDateSlot(slot.date)"
-                      class="flex h-7 w-7 items-center justify-center rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors cursor-pointer">
+                      class="flex h-7 w-7 items-center justify-center rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 transition-colors cursor-pointer">
                       <ui-icon name="close" class="text-base" />
                     </button>
                   </div>
-                  <div class="flex items-center gap-2 rounded-lg bg-gray-50 dark:bg-zinc-900/60 border border-gray-100 dark:border-zinc-700 px-3 py-2 text-sm">
+                  <div class="flex items-center gap-2 rounded-lg bg-gray-50 border border-gray-100 px-3 py-2 text-sm">
                     <ui-icon name="schedule" class="text-primary text-base shrink-0" />
-                    <span class="font-semibold text-gray-700 dark:text-zinc-300">{{ slot.startTime }} – {{ slot.endTime }}</span>
-                    <span class="ml-auto text-xs text-gray-400 dark:text-zinc-500">Time slot confirmed</span>
+                    <span class="font-semibold text-gray-700">{{ slot.startTime }} – {{ slot.endTime }}</span>
+                    <span class="ml-auto text-xs text-gray-400">Time slot confirmed</span>
                   </div>
                 </div>
               }
@@ -123,7 +124,7 @@ import { GymReservationService } from './gymnasium-reservation.service';
       @if (currentStep() === 2) {
         <div class="flex flex-col gap-4 animate-fade-in">
           <div>
-            <h2 class="text-lg font-bold text-gray-900 dark:text-zinc-100">Event Details</h2>
+            <h2 class="text-lg font-bold text-gray-900">Event Details</h2>
             <p class="text-sm text-gray-500 mt-0.5">Fill in the event information and select needed equipment.</p>
           </div>
 
@@ -172,7 +173,7 @@ import { GymReservationService } from './gymnasium-reservation.service';
                   formControlName="additionalInstructions"
                   rows="3"
                   placeholder="Any special requests, setup requirements, or notes for the Gymnasium team..."
-                  class="w-full rounded-lg border border-zinc-950/15 bg-white/70 backdrop-blur-md backdrop-saturate-150 ring-1 ring-inset ring-white/75 shadow-[inset_0_1px_0_rgba(255,255,255,0.75),inset_0_-1px_0_rgba(24,24,27,0.05),0_2px_8px_-3px_rgba(24,24,27,0.2)] dark:border-white/15 dark:bg-zinc-800/70 dark:ring-white/10 px-4 py-2.5 text-sm text-gray-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-primary/35 focus:border-primary/55 transition-all duration-200 resize-none"
+                  class="w-full rounded-lg border border-zinc-950/15 bg-white/70 backdrop-blur-md backdrop-saturate-150 ring-1 ring-inset ring-white/75 shadow-[inset_0_1px_0_rgba(255,255,255,0.75),inset_0_-1px_0_rgba(24,24,27,0.05),0_2px_8px_-3px_rgba(24,24,27,0.2)] px-4 py-2.5 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-primary/35 focus:border-primary/55 transition-all duration-200 resize-none"
                 ></textarea>
               </div>
             </div>
@@ -201,9 +202,6 @@ import { GymReservationService } from './gymnasium-reservation.service';
                       [class.border-gray-300]="!isEquipmentSelected(eq.id)"
                       [class.bg-white]="!isEquipmentSelected(eq.id)"
                       [class.text-gray-600]="!isEquipmentSelected(eq.id)"
-                      [class.dark:border-zinc-600]="!isEquipmentSelected(eq.id)"
-                      [class.dark:bg-zinc-800]="!isEquipmentSelected(eq.id)"
-                      [class.dark:text-zinc-300]="!isEquipmentSelected(eq.id)"
                       [title]="eq.name"
                     >{{ eq.name }}</button>
                   }
@@ -218,7 +216,7 @@ import { GymReservationService } from './gymnasium-reservation.service';
       @if (currentStep() === 3) {
         <div class="flex flex-col gap-4 animate-fade-in">
           <div>
-            <h2 class="text-lg font-bold text-gray-900 dark:text-zinc-100">Contact Information</h2>
+            <h2 class="text-lg font-bold text-gray-900">Contact Information</h2>
             <p class="text-sm text-gray-500 mt-0.5">Provide your contact details. We'll use these for reservation updates.</p>
           </div>
 
@@ -250,18 +248,18 @@ import { GymReservationService } from './gymnasium-reservation.service';
           </div>
 
           <!-- Reservation summary -->
-          <div class="mt-2 rounded-xl bg-gray-50 dark:bg-zinc-800/60 border border-gray-200 dark:border-zinc-700 p-4 flex flex-col gap-3">
-            <h3 class="text-sm font-bold text-gray-700 dark:text-zinc-300 flex items-center gap-2">
+          <div class="mt-2 rounded-xl bg-gray-50 border border-gray-200 p-4 flex flex-col gap-3">
+            <h3 class="text-sm font-bold text-gray-700 flex items-center gap-2">
               <ui-icon name="summarize" class="text-base text-primary" />
               Reservation Summary
             </h3>
-            <div class="flex flex-col gap-1.5 text-sm text-gray-600 dark:text-zinc-400">
-              <div class="flex gap-2"><span class="font-medium text-gray-800 dark:text-zinc-200 min-w-24">Event:</span> {{ detailsForm.get('eventTitle')?.value || '—' }}</div>
-              <div class="flex gap-2"><span class="font-medium text-gray-800 dark:text-zinc-200 min-w-24">Department:</span> {{ detailsForm.get('department')?.value || '—' }}</div>
-              <div class="flex gap-2"><span class="font-medium text-gray-800 dark:text-zinc-200 min-w-24">Organization:</span> {{ detailsForm.get('organization')?.value || '—' }}</div>
-              <div class="flex gap-2"><span class="font-medium text-gray-800 dark:text-zinc-200 min-w-24">Attendees:</span> {{ detailsForm.get('numberOfAttendees')?.value || '—' }}</div>
+            <div class="flex flex-col gap-1.5 text-sm text-gray-600">
+              <div class="flex gap-2"><span class="font-medium text-gray-800 min-w-24">Event:</span> {{ detailsForm.get('eventTitle')?.value || '—' }}</div>
+              <div class="flex gap-2"><span class="font-medium text-gray-800 min-w-24">Department:</span> {{ detailsForm.get('department')?.value || '—' }}</div>
+              <div class="flex gap-2"><span class="font-medium text-gray-800 min-w-24">Organization:</span> {{ detailsForm.get('organization')?.value || '—' }}</div>
+              <div class="flex gap-2"><span class="font-medium text-gray-800 min-w-24">Attendees:</span> {{ detailsForm.get('numberOfAttendees')?.value || '—' }}</div>
               <div class="flex gap-2 flex-wrap">
-                <span class="font-medium text-gray-800 dark:text-zinc-200 min-w-24">Dates:</span>
+                <span class="font-medium text-gray-800 min-w-24">Dates:</span>
                 <span>
                   @for (slot of dateSlots(); track slot.date; let last = $last) {
                     {{ formatDateDisplay(slot.date) }} ({{ slot.startTime }} – {{ slot.endTime }}){{ !last ? ', ' : '' }}
@@ -270,14 +268,14 @@ import { GymReservationService } from './gymnasium-reservation.service';
               </div>
               @if (selectedEquipment().length > 0) {
                 <div class="flex gap-2 flex-wrap">
-                  <span class="font-medium text-gray-800 dark:text-zinc-200 min-w-24">Equipment:</span>
+                  <span class="font-medium text-gray-800 min-w-24">Equipment:</span>
                   <span>{{ selectedEquipment().map(e => e.name).join(', ') }}</span>
                 </div>
               }
               @if (detailsForm.get('additionalInstructions')?.value) {
                 <div class="flex gap-2 flex-wrap">
-                  <span class="font-medium text-gray-800 dark:text-zinc-200 min-w-24">Notes:</span>
-                  <span class="italic text-gray-500 dark:text-zinc-400">{{ detailsForm.get('additionalInstructions')?.value }}</span>
+                  <span class="font-medium text-gray-800 min-w-24">Notes:</span>
+                  <span class="italic text-gray-500">{{ detailsForm.get('additionalInstructions')?.value }}</span>
                 </div>
               }
             </div>
@@ -288,16 +286,14 @@ import { GymReservationService } from './gymnasium-reservation.service';
             class="flex items-start gap-3 rounded-xl border p-4 cursor-pointer transition-colors select-none"
             [class.border-primary]="termsAccepted()"
             [class.bg-primary/5]="termsAccepted()"
-            [class.dark:bg-primary/10]="termsAccepted()"
             [class.border-gray-200]="!termsAccepted()"
-            [class.dark:border-zinc-700]="!termsAccepted()"
           >
             <input type="checkbox"
               [checked]="termsAccepted()"
               (change)="termsAccepted.set(!termsAccepted())"
               class="mt-0.5 h-4 w-4 shrink-0 rounded border-gray-300 accent-primary cursor-pointer"
             />
-            <span class="text-sm text-gray-700 dark:text-zinc-300 leading-snug">
+            <span class="text-sm text-gray-700 leading-snug">
               I have read and agree to the
               <a routerLink="/customer/gymnasium/terms" target="_blank"
                 class="font-semibold text-primary underline underline-offset-2 hover:opacity-80 transition-opacity">
@@ -307,7 +303,7 @@ import { GymReservationService } from './gymnasium-reservation.service';
           </label>
 
           @if (submitError()) {
-            <div class="flex items-center gap-2 rounded-lg bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 px-4 py-3 text-sm text-red-600 dark:text-red-400">
+            <div class="flex items-center gap-2 rounded-lg bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-600">
               <ui-icon name="error_outline" class="text-base shrink-0" />
               {{ submitError() }}
             </div>
@@ -315,30 +311,24 @@ import { GymReservationService } from './gymnasium-reservation.service';
         </div>
       }
 
-      <!-- Success -->
       @if (submitted()) {
-        <div class="flex flex-col items-center justify-center gap-4 py-12 text-center animate-fade-in">
-          <div class="flex h-20 w-20 items-center justify-center rounded-full bg-green-100 dark:bg-green-900/30">
-            <ui-icon name="check_circle" class="text-5xl text-green-500" />
-          </div>
-          <div>
-            <h2 class="text-xl font-bold text-gray-900 dark:text-zinc-100">Reservation Submitted!</h2>
-            <p class="text-sm text-gray-500 mt-1 max-w-xs">Your Gymnasium reservation request has been sent. You will be notified once it's confirmed.</p>
-          </div>
-          <a routerLink="/customer" uiButton variant="primary">Back to Home</a>
-        </div>
+        <app-reservation-submitted-modal
+          message="Your Gymnasium reservation request has been sent. You will be notified once it's confirmed."
+          [returnPath]="returnPath"
+          [returnLabel]="returnLabel"
+        />
       }
     </div>
 
     <!-- Navigation buttons -->
     @if (!submitted()) {
-      <div class="shrink-0 p-6 flex gap-3 sticky bottom-0 z-20 bg-white/40 dark:bg-zinc-900/40 backdrop-blur-md border-t border-gray-100 dark:border-zinc-800">
+      <div class="shrink-0 p-6 flex gap-3 sticky bottom-0 z-20 bg-white/40 backdrop-blur-md border-t border-gray-100">
         @if (currentStep() === 1) {
-          <button type="button" uiButton variant="secondary" class="flex-1 bg-white/50 dark:bg-zinc-800/50" (click)="addMoreDates.emit()">
+          <button type="button" uiButton variant="secondary" class="flex-1 bg-white/50" (click)="addMoreDates.emit()">
             ← ADD DATES
           </button>
         } @else {
-          <button uiButton variant="secondary" type="button" class="flex-1 bg-white/50 dark:bg-zinc-800/50" (click)="prevStep()">BACK</button>
+          <button uiButton variant="secondary" type="button" class="flex-1 bg-white/50" (click)="prevStep()">BACK</button>
         }
 
         @if (currentStep() < 3) {
@@ -363,6 +353,8 @@ export class GymnasiumStepper implements OnChanges {
   @Input() selectedDates: ReservedDateSlot[] = [];
   @Input() availableEquipment: GymEquipmentItem[] = [];
   @Input() equipmentLoading = false;
+  @Input() returnPath = '/customer';
+  @Input() returnLabel = 'Back to Home';
   @Output() addMoreDates = new EventEmitter<void>();
 
   private readonly reservationService = inject(GymReservationService);

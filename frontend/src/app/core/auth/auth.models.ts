@@ -3,6 +3,22 @@ export interface LoginRequest {
   password: string;
 }
 
+export interface UpdateProfileRequest {
+  fullname: string;
+  email: string;
+  currentPassword?: string;
+  newPassword?: string;
+}
+
+export interface ForgotPasswordRequest {
+  email: string;
+}
+
+export interface ResetPasswordWithTokenRequest {
+  token: string;
+  newPassword: string;
+}
+
 export interface AuthResponse {
   success: boolean;
   message: string;

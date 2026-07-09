@@ -1,12 +1,11 @@
-<app-admin-shell>
-  <form
+<form
     [formGroup]="form"
     (ngSubmit)="save()"
     autocomplete="off"
-    class="bg-white/45 backdrop-blur-xl backdrop-saturate-150 ring-1 ring-inset ring-white/60 shadow-[inset_0_1px_0_rgba(255,255,255,0.8),0_16px_40px_-12px_rgba(24,24,27,0.18)] dark:bg-zinc-900/50 dark:ring-white/10 dark:shadow-[inset_0_1px_0_rgba(255,255,255,0.08),0_18px_44px_-14px_rgba(0,0,0,0.6)] animate-rise flex min-h-0 flex-1 flex-col overflow-hidden rounded-2xl"
+    class="bg-white/45 backdrop-blur-xl backdrop-saturate-150 ring-1 ring-inset ring-white/60 shadow-[inset_0_1px_0_rgba(255,255,255,0.8),0_16px_40px_-12px_rgba(24,24,27,0.18)] animate-rise flex min-h-0 flex-1 flex-col overflow-hidden rounded-2xl"
   >
     <div class="mx-5 border-b border-primary/30 py-3.5 sm:mx-7">
-      <div class="flex items-center gap-3 text-primary dark:text-white">
+      <div class="flex items-center gap-3 text-primary">
         <ui-icon name="edit_square" class="text-2xl" />
         <h2 class="text-xl font-black">UPDATE EQUIPMENT</h2>
       </div>
@@ -21,7 +20,7 @@
 
     <div class="flex-1 overflow-y-auto p-5 lg:p-7">
       @if (loading()) {
-        <div class="py-10 text-center text-sm text-gray-500 dark:text-zinc-400">
+        <div class="py-10 text-center text-sm text-gray-500">
           Loading equipment...
         </div>
       } @else if (ready()) {
@@ -29,7 +28,7 @@
           <div class="flex flex-col gap-1.5 sm:col-span-2">
             <label
               for="edit-equipment-name"
-              class="text-sm font-bold text-gray-800 dark:text-zinc-200"
+              class="text-sm font-bold text-gray-800"
             >
               Name
             </label>
@@ -44,7 +43,7 @@
           </div>
 
           <div class="flex flex-col gap-1.5">
-            <label class="text-sm font-bold text-gray-800 dark:text-zinc-200">Service</label>
+            <label class="text-sm font-bold text-gray-800">Service</label>
             <ui-select
               formControlName="facilityId"
               placeholder="Select service"
@@ -53,7 +52,7 @@
           </div>
 
           <div class="flex flex-col gap-1.5">
-            <label class="text-sm font-bold text-gray-800 dark:text-zinc-200">Status</label>
+            <label class="text-sm font-bold text-gray-800">Status</label>
             <ui-select formControlName="status" placeholder="Select status" [options]="statuses()" />
           </div>
         </div>
@@ -63,10 +62,9 @@
     <div
       class="mx-5 mt-auto flex flex-col-reverse gap-3 border-t border-primary/30 py-3 sm:mx-7 sm:flex-row sm:justify-end"
     >
-      <a uiButton variant="secondary" routerLink="/equipments"> CANCEL </a>
+      <a uiButton variant="secondary" [routerLink]="listPath"> CANCEL </a>
       <button uiButton type="submit" [disabled]="loading() || saving() || !ready()">
         <span>SAVE</span>
       </button>
     </div>
   </form>
-</app-admin-shell>

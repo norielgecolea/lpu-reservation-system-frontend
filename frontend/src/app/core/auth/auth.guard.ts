@@ -1,8 +1,18 @@
 import { inject } from '@angular/core';
-import { CanActivateFn, Router } from '@angular/router';
-import { catchError, map, of } from 'rxjs';
+import { CanActivateFn, Router, UrlTree } from '@angular/router';
+import { catchError, map, of, timeout } from 'rxjs';
 
 import { AuthService } from './auth.service';
+
+const AUTH_CHECK_TIMEOUT_MS = 8_000;
+
+function loginUrl(router: Router): UrlTree {
+  return router.parseUrl('/login');
+}
+
+function sessionCheck(auth: AuthService) {
+  return auth.me().pipe(timeout(AUTH_CHECK_TIMEOUT_MS));
+}
 
 /** Guards a route by validating the stored token against `/auth/me`. */
 export const authGuard: CanActivateFn = () => {
@@ -11,44 +21,45 @@ export const authGuard: CanActivateFn = () => {
 
   const token = auth.token();
 
-  // 1. No token: block immediately.
   if (!token) {
-    return router.parseUrl('/login');
+    return loginUrl(router);
   }
 
-  // 2. Validate session with backend.
-  return auth.me().pipe(
+  return sessionCheck(auth).pipe(
     map((res) => {
       if (res.success) {
         return true;
       }
       auth.logout();
-      return router.parseUrl('/login');
+      return loginUrl(router);
     }),
     catchError(() => {
       auth.logout();
-      return of(router.parseUrl('/login'));
+      return of(loginUrl(router));
     }),
   );
 };
 
 /** Guards /facilities/* routes — requires FACILITIESADMIN (or SUPERADMIN) role. */
 export const facilitiesGuard: CanActivateFn = () => {
-  const auth   = inject(AuthService);
+  const auth = inject(AuthService);
   const router = inject(Router);
 
-  if (!auth.token()) return router.parseUrl('/login');
+  if (!auth.token()) return loginUrl(router);
 
   const validate = (role: string | undefined) => {
     if (role === 'FACILITIESADMIN' || role === 'SUPERADMIN') return true;
-    return router.parseUrl('/login');
+    return loginUrl(router);
   };
 
   if (auth.user()) return validate(auth.user()?.role);
 
-  return auth.me().pipe(
+  return sessionCheck(auth).pipe(
     map((res) => validate(res.success ? auth.user()?.role : undefined)),
-    catchError(() => { auth.logout(); return of(router.parseUrl('/login')); }),
+    catchError(() => {
+      auth.logout();
+      return of(loginUrl(router));
+    }),
   );
 };
 
@@ -62,12 +73,11 @@ export const guestGuard: CanActivateFn = () => {
     return true;
   }
 
-  // Cached user — definitely authenticated.
   if (auth.user()) {
     return dashboard;
   }
 
-  return auth.me().pipe(
+  return sessionCheck(auth).pipe(
     map((res) => (res.success ? dashboard : true)),
     catchError(() => {
       auth.logout();

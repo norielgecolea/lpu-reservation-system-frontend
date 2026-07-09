@@ -1,5 +1,6 @@
 import { HttpClient, HttpResponse } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
+import { Router } from '@angular/router';
 import { catchError, from, map, switchMap, throwError } from 'rxjs';
 
 import { environment } from '../../../../environments/environment';
@@ -14,10 +15,21 @@ type UpdateVehicleBody = Omit<UpdateVehicleRequest, 'image'> & { image?: string 
 type CreateVehicleBody = Omit<CreateVehicleRequest, 'image'> & { image?: string };
 type StatementBody = { success?: boolean | string; message?: string } | null;
 
+export type VehicleScope = 'admin' | 'facilities';
+
 @Injectable({ providedIn: 'root' })
 export class VehiclesService {
   private readonly http = inject(HttpClient);
+  private readonly router = inject(Router);
   private readonly base = environment.apiUrl;
+
+  scope(): VehicleScope {
+    return this.router.url.includes('/facilities/vehicles') ? 'facilities' : 'admin';
+  }
+
+  listPath(): string {
+    return this.scope() === 'facilities' ? '/facilities/vehicles' : '/vehicles';
+  }
 
   list() {
     return this.http.get<PopulateVehiclesResponse>(`${this.base}/admin/vehicle`);

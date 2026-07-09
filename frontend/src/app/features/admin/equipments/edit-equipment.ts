@@ -2,8 +2,6 @@ import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@a
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { forkJoin } from 'rxjs';
-
-import { AdminShell } from '../../../shared/layout/admin-shell/admin-shell';
 import { UiButton, UiFormFeedback, UiIcon, UiInput, UiSelect, UiSelectOption } from '../../../shared/ui';
 import { toFacilityOptions } from './equipment-facilities';
 import { EQUIPMENT_STATUS_OPTIONS } from './equipment-status';
@@ -11,7 +9,7 @@ import { EquipmentsService } from './equipments.service';
 
 @Component({
   selector: 'app-edit-equipment',
-  imports: [ReactiveFormsModule, RouterLink, AdminShell, UiButton, UiFormFeedback, UiIcon, UiInput, UiSelect],
+  imports: [ReactiveFormsModule, RouterLink, UiButton, UiFormFeedback, UiIcon, UiInput, UiSelect],
   templateUrl: './edit-equipment.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -21,6 +19,7 @@ export class EditEquipment {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
 
+  protected readonly listPath = this.api.listPath();
   protected readonly loading = signal(true);
   protected readonly saving = signal(false);
   protected readonly ready = signal(false);
@@ -82,7 +81,7 @@ export class EditEquipment {
         }
 
         this.currentStatus.set(equipment.status);
-        this.facilities.set(toFacilityOptions(facilities ?? []));
+        this.facilities.set(toFacilityOptions(facilities ?? [], this.api.scope()));
         this.form.setValue({
           name: equipment.name ?? '',
           facilityId: String(equipment.facilityId),
@@ -125,7 +124,7 @@ export class EditEquipment {
           this.saving.set(false);
 
           if (res?.success) {
-            this.router.navigateByUrl('/equipments');
+            this.router.navigateByUrl(this.api.listPath());
           } else {
             this.error.set(res?.message ?? 'Failed to update equipment');
           }

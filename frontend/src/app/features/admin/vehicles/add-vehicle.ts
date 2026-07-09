@@ -1,8 +1,6 @@
 import { ChangeDetectionStrategy, Component, OnDestroy, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
-
-import { AdminShell } from '../../../shared/layout/admin-shell/admin-shell';
 import { UiButton, UiFormFeedback, UiIcon, UiInput, UiSelect } from '../../../shared/ui';
 import { VEHICLE_STATUS_OPTIONS } from './vehicle-status';
 import { VAN_FACILITY_ID } from './vehicles.models';
@@ -12,14 +10,11 @@ import { VehiclesService } from './vehicles.service';
   selector: 'app-add-vehicle',
   imports: [
     ReactiveFormsModule,
-    RouterLink,
-    AdminShell,
-    UiButton,
+    RouterLink, UiButton,
     UiFormFeedback,
     UiIcon,
     UiInput,
-    UiSelect,
-  ],
+    UiSelect],
   templateUrl: './add-vehicle.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -28,6 +23,7 @@ export class AddVehicle implements OnDestroy {
   private readonly api = inject(VehiclesService);
   private readonly router = inject(Router);
 
+  protected readonly listPath = this.api.listPath();
   protected readonly statuses = VEHICLE_STATUS_OPTIONS;
   protected readonly saving = signal(false);
   protected readonly error = signal<string | null>(null);
@@ -79,7 +75,7 @@ export class AddVehicle implements OnDestroy {
           this.saving.set(false);
 
           if (res?.success) {
-            this.router.navigateByUrl('/vehicles');
+            this.router.navigateByUrl(this.api.listPath());
           } else {
             this.error.set(res?.message ?? 'Failed to create vehicle');
           }

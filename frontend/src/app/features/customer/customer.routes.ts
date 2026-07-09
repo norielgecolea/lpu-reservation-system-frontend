@@ -6,6 +6,14 @@ export const CUSTOMER_ROUTES: Routes = [
     loadComponent: () => import('./landing-page/landing-page').then((m) => m.LandingPage),
   },
   {
+    path: 'van',
+    loadComponent: () => import('./van/van-reservation').then((m) => m.VanReservation),
+  },
+  {
+    path: 'van/terms',
+    loadComponent: () => import('./van/van-terms').then((m) => m.VanTerms),
+  },
+  {
     path: 'flt',
     loadComponent: () => import('./flt/flt-reservation').then((m) => m.FltReservation),
   },

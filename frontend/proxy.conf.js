@@ -7,4 +7,9 @@ module.exports = {
     changeOrigin: true,
     ws: true,
   },
+  '/uploads': {
+    target,
+    secure: false,
+    changeOrigin: true,
+  },
 };

@@ -1,9 +1,11 @@
 import {
   ChangeDetectionStrategy,
   Component,
+  HostBinding,
   OnInit,
   computed,
   inject,
+  input,
   signal,
 } from '@angular/core';
 import { RouterLink } from '@angular/router';
@@ -12,6 +14,11 @@ import { FltStepper } from './flt-stepper';
 import { FltReservationService } from './flt-reservation.service';
 import { FltApprovedEvent, FltEquipmentItem, ReservedDateSlot, TIME_SLOTS } from './flt-reservation.models';
 import { MaintenanceBlock, MaintenanceService } from '../../admin/maintenance/maintenance.service';
+import {
+  RESERVATION_ADVANCE_DAYS,
+  advanceNoticeText,
+  getMinBookableDateStr,
+} from '../reservation-advance.util';
 
 type View = 'calendar' | 'timeslots' | 'form';
 
@@ -31,21 +38,30 @@ interface CalendarCell {
   imports: [RouterLink, UiIcon, FltStepper],
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: {
-    class: 'flex flex-col min-h-screen bg-gray-50 dark:bg-zinc-900',
+    class: 'flex flex-col',
   },
   template: `
     <!-- ─── VIEW 1: Full-screen Calendar ─── -->
     @if (view() === 'calendar') {
-      <div class="flex flex-col min-h-screen">
+      <div
+        class="flex flex-col"
+        [class.min-h-screen]="!adminMode()"
+        [class.h-full]="adminMode()"
+        [class.min-h-0]="adminMode()"
+      >
 
         <!-- Header -->
         <div class="bg-primary bg-[linear-gradient(135deg,#7a2342,#5f1830_55%,#8d2546)] text-white shadow-lg shrink-0">
           <div class="max-w-screen-2xl mx-auto px-4 sm:px-6 py-4 flex flex-col sm:flex-row sm:items-center gap-3">
             <div class="flex items-center gap-3 flex-1">
-              <img src="/logo.svg" alt="LPU Logo" class="w-10 h-10 shrink-0 object-contain drop-shadow" />
+              @if (!adminMode()) {
+                <img src="/logo.svg" alt="LPU Logo" class="w-10 h-10 shrink-0 object-contain drop-shadow" />
+              }
               <div>
                 <h1 class="text-xl sm:text-2xl font-black tracking-tight leading-tight">FLT Theater</h1>
-                <p class="text-white/60 text-xs">Faculty Learning and Training Facility</p>
+                @if (!adminMode()) {
+                  <p class="text-white/60 text-xs">Feliciano L. Torres Theater</p>
+                }
               </div>
             </div>
             <div class="flex items-center gap-3">
@@ -67,23 +83,23 @@ interface CalendarCell {
                   <ui-icon name="chevron_right" class="text-xl" />
                 </button>
               </div>
-              <a routerLink="/customer" class="flex items-center gap-1.5 text-xs text-white/70 hover:text-white transition-colors cursor-pointer">
+              <a [routerLink]="returnPath()" class="flex items-center gap-1.5 text-xs text-white/70 hover:text-white transition-colors cursor-pointer shrink-0">
                 <ui-icon name="arrow_back" class="text-base" />
-                Back
+                {{ adminMode() ? 'Back to list' : 'Back' }}
               </a>
             </div>
           </div>
         </div>
 
         <!-- Calendar grid -->
-        <div class="flex-1 flex flex-col max-w-screen-2xl w-full mx-auto px-4 sm:px-6 py-4 gap-3">
+        <div class="flex flex-1 min-h-0 flex-col max-w-screen-2xl w-full mx-auto px-4 sm:px-6 py-4 gap-3">
           @if (loadingEvents()) {
             <div class="flex flex-1 items-center justify-center gap-3 text-gray-400">
               <ui-icon name="autorenew" class="text-3xl animate-spin" />
               <span class="text-sm">Loading schedule...</span>
             </div>
           } @else {
-            <div class="flex-1 flex flex-col overflow-hidden rounded-xl ring-1 ring-black/5 dark:ring-white/10 shadow-sm bg-white dark:bg-zinc-900">
+            <div class="flex flex-1 min-h-0 flex-col overflow-hidden rounded-xl ring-1 ring-black/5 shadow-sm bg-white">
               <!-- Day-of-week header -->
               <div class="grid grid-cols-7 bg-primary text-center text-sm font-bold text-white shrink-0">
                 @for (wd of weekdays; track wd) {
@@ -91,23 +107,22 @@ interface CalendarCell {
                 }
               </div>
               <!-- Day cells -->
-              <div class="flex-1 grid grid-cols-7 overflow-auto" [style.grid-template-rows]="calendarRows()">
+              <div
+                class="grid flex-1 min-h-0 grid-cols-7 overflow-auto"
+                [style.grid-template-rows]="calendarRows()"
+              >
                 @for (cell of calendarCells(); track ($index)) {
                   <div
-                    class="flex flex-col border-r border-b border-gray-100 dark:border-zinc-800 p-1 sm:p-2 min-h-16 sm:min-h-20 transition-colors"
+                    class="flex flex-col border-r border-b border-gray-100 bg-white p-1 sm:p-2 min-h-16 sm:min-h-20 transition-colors"
                     [class.bg-gray-50]="cell.day !== null && !cell.isToday && !basket().some(s => s.date === cell.dateStr)"
-                    [class.dark:bg-zinc-900]="cell.day !== null && !cell.isToday && !basket().some(s => s.date === cell.dateStr)"
                     [class.bg-gray-100]="cell.day === null"
-                    [class.dark:bg-zinc-800/40]="cell.day === null"
                     [class.bg-primary/5]="cell.isToday"
                     [class.bg-emerald-50]="cell.day !== null && !cell.isToday && !cell.isPast && basket().some(s => s.date === cell.dateStr)"
-                    [class.dark:bg-emerald-950/20]="cell.day !== null && !cell.isToday && !cell.isPast && basket().some(s => s.date === cell.dateStr)"
                     [class.ring-2]="cell.day !== null && !cell.isPast && basket().some(s => s.date === cell.dateStr)"
                     [class.ring-inset]="cell.day !== null && !cell.isPast && basket().some(s => s.date === cell.dateStr)"
                     [class.ring-emerald-500]="cell.day !== null && !cell.isPast && basket().some(s => s.date === cell.dateStr)"
                     [class.cursor-pointer]="cell.day !== null && !cell.isPast"
                     [class.hover:bg-sky-50]="cell.day !== null && !cell.isPast && !cell.isToday && !basket().some(s => s.date === cell.dateStr)"
-                    [class.dark:hover:bg-zinc-800]="cell.day !== null && !cell.isPast && !cell.isToday && !basket().some(s => s.date === cell.dateStr)"
                     [class.opacity-40]="cell.isPast"
                     (click)="cell.day !== null && !cell.isPast ? selectDay(cell.dateStr!) : null"
                   >
@@ -119,7 +134,6 @@ interface CalendarCell {
                         [class.bg-emerald-500]="!cell.isToday && basket().some(s => s.date === cell.dateStr)"
                         [class.text-white]="!cell.isToday && basket().some(s => s.date === cell.dateStr)"
                         [class.text-gray-700]="!cell.isToday && !basket().some(s => s.date === cell.dateStr)"
-                        [class.dark:text-zinc-300]="!cell.isToday && !basket().some(s => s.date === cell.dateStr)"
                       >{{ cell.day }}</span>
                       @if (cell.events.length > 0 || dateHasMaintenance(cell.dateStr!)) {
                         <ul class="flex flex-col gap-0.5 overflow-hidden">
@@ -128,24 +142,18 @@ interface CalendarCell {
                               class="min-w-0 rounded border-l-2 px-1 py-0.5 text-[10px] leading-tight"
                               [class.border-sky-500]="ev.eventKind !== 'COORDINATION'"
                               [class.bg-sky-50]="ev.eventKind !== 'COORDINATION'"
-                              [class.dark:bg-sky-950/50]="ev.eventKind !== 'COORDINATION'"
                               [class.border-amber-500]="ev.eventKind === 'COORDINATION'"
                               [class.bg-amber-50]="ev.eventKind === 'COORDINATION'"
-                              [class.dark:bg-amber-950/50]="ev.eventKind === 'COORDINATION'"
                             >
                               <span
                                 class="block truncate font-bold"
                                 [class.text-sky-700]="ev.eventKind !== 'COORDINATION'"
-                                [class.dark:text-sky-300]="ev.eventKind !== 'COORDINATION'"
                                 [class.text-amber-700]="ev.eventKind === 'COORDINATION'"
-                                [class.dark:text-amber-300]="ev.eventKind === 'COORDINATION'"
                               >{{ ev.startTime }}–{{ ev.endTime }}</span>
                               <span
                                 class="block truncate"
                                 [class.text-sky-900]="ev.eventKind !== 'COORDINATION'"
-                                [class.dark:text-sky-200]="ev.eventKind !== 'COORDINATION'"
                                 [class.text-amber-900]="ev.eventKind === 'COORDINATION'"
-                                [class.dark:text-amber-200]="ev.eventKind === 'COORDINATION'"
                               >{{ ev.eventKind === 'COORDINATION' ? '📋 Coordination' : ev.department }}</span>
                             </li>
                           }
@@ -153,15 +161,15 @@ interface CalendarCell {
                             <li class="text-[10px] font-bold text-primary pl-1">+{{ cell.events.length - 3 }} more</li>
                           }
                           @if (dateHasMaintenance(cell.dateStr!)) {
-                            <li class="min-w-0 rounded border-l-2 border-orange-500 bg-orange-50 dark:bg-orange-950/50 px-1 py-0.5 text-[10px] leading-tight">
-                              <span class="block truncate font-bold text-orange-700 dark:text-orange-300">🔧 Maintenance</span>
+                            <li class="min-w-0 rounded border-l-2 border-orange-500 bg-orange-50 px-1 py-0.5 text-[10px] leading-tight">
+                              <span class="block truncate font-bold text-orange-700">🔧 Maintenance</span>
                             </li>
                           }
                         </ul>
                       }
                       @if (basket().some(s => s.date === cell.dateStr)) {
                         <div class="mt-auto pt-0.5">
-                          <span class="inline-flex items-center gap-0.5 rounded-full bg-emerald-100 dark:bg-emerald-900/40 px-1.5 py-0.5 text-[9px] font-bold text-emerald-700 dark:text-emerald-400 leading-none">
+                          <span class="inline-flex items-center gap-0.5 rounded-full bg-emerald-100 px-1.5 py-0.5 text-[9px] font-bold text-emerald-700 leading-none">
                             ✓ Selected
                           </span>
                         </div>
@@ -173,7 +181,7 @@ interface CalendarCell {
             </div>
 
             <!-- Legend -->
-            <div class="flex flex-wrap items-center gap-2 shrink-0 text-xs text-gray-500 dark:text-zinc-400">
+            <div class="flex flex-wrap items-center gap-2 shrink-0 text-xs text-gray-500">
               <span class="flex items-center gap-1.5">
                 <span class="inline-block w-3 h-3 rounded border-l-2 border-sky-500 bg-sky-50"></span>
                 Approved Reservation
@@ -194,17 +202,25 @@ interface CalendarCell {
                 <span class="inline-block w-3 h-3 rounded-full bg-primary"></span>
                 Today
               </span>
-              <span class="ml-auto text-[11px] italic text-amber-600 dark:text-amber-400 flex items-center gap-1">
-                <ui-icon name="info" class="text-xs" />
-                Reservations must be made at least 2 weeks in advance
-              </span>
+              @if (advanceNotice()) {
+                <span class="ml-auto text-[11px] italic text-amber-600 flex items-center gap-1">
+                  <ui-icon name="info" class="text-xs" />
+                  {{ advanceNotice() }}
+                </span>
+              }
+              @if (adminMode()) {
+                <span class="ml-auto text-[11px] font-semibold text-emerald-200 flex items-center gap-1">
+                  <ui-icon name="admin_panel_settings" class="text-xs" />
+                  Admin booking — advance rule waived
+                </span>
+              }
             </div>
           }
         </div>
 
         <!-- Basket bar (bottom) -->
         @if (basket().length > 0) {
-          <div class="shrink-0 border-t border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 shadow-lg px-4 sm:px-6 py-3">
+          <div class="shrink-0 border-t border-gray-200 bg-white shadow-lg px-4 sm:px-6 py-3">
             <div class="max-w-screen-2xl mx-auto flex flex-col sm:flex-row sm:items-center gap-3">
               <div class="flex-1 flex flex-wrap gap-2">
                 @for (slot of basket(); track slot.date) {
@@ -233,11 +249,20 @@ interface CalendarCell {
 
     <!-- ─── VIEW 2: Day Time Slots ─── -->
     @if (view() === 'timeslots') {
-      <div class="flex flex-col min-h-screen">
+      <div
+        class="flex flex-col"
+        [class.min-h-screen]="!adminMode()"
+        [class.h-full]="adminMode()"
+        [class.min-h-0]="adminMode()"
+      >
 
         <!-- Header -->
         <div class="bg-primary bg-[linear-gradient(135deg,#7a2342,#5f1830_55%,#8d2546)] text-white shadow-lg shrink-0">
-          <div class="max-w-screen-2xl mx-auto px-4 sm:px-6 py-4 flex items-center gap-4">
+          <div
+            class="max-w-screen-2xl mx-auto px-4 sm:px-6 flex items-center gap-4"
+            [class.py-3]="adminMode()"
+            [class.py-4]="!adminMode()"
+          >
             <button
               type="button"
               (click)="view.set('calendar')"
@@ -250,55 +275,68 @@ interface CalendarCell {
               <h2 class="text-lg sm:text-xl font-black tracking-tight">{{ formatDateLong(selectedDay()) }}</h2>
               <p class="text-white/60 text-xs">FLT Theater — Select your time slot</p>
             </div>
-            <div class="w-24"></div>
+            @if (adminMode()) {
+              <a [routerLink]="returnPath()" class="flex shrink-0 items-center gap-1.5 text-xs text-white/70 hover:text-white transition-colors cursor-pointer">
+                <ui-icon name="arrow_back" class="text-base" />
+                Back to list
+              </a>
+            } @else {
+              <div class="w-24"></div>
+            }
           </div>
         </div>
 
         <!-- Time slots -->
-        <div class="flex-1 max-w-screen-md mx-auto w-full px-4 sm:px-6 py-6 flex flex-col gap-4">
-          <div class="rounded-xl overflow-hidden ring-1 ring-black/5 dark:ring-white/10 shadow-sm bg-white dark:bg-zinc-900">
+        <div
+          class="max-w-screen-md mx-auto w-full px-4 sm:px-6 flex flex-col gap-3 min-h-0"
+          [class.flex-1]="adminMode()"
+          [class.py-3]="adminMode()"
+          [class.py-6]="!adminMode()"
+        >
+          <div
+            class="rounded-xl ring-1 ring-black/5 shadow-sm bg-white"
+            [class.overflow-hidden]="!adminMode()"
+            [class.flex-1]="adminMode()"
+            [class.min-h-0]="adminMode()"
+            [class.overflow-y-auto]="adminMode()"
+            [style.scrollbar-width]="adminMode() ? 'thin' : null"
+          >
             @for (slot of timeSlots; track slot.value) {
               @if (getMaintenanceSlot(slot.value); as mb) {
                 <!-- Under Maintenance slot -->
-                <div class="flex items-stretch border-b border-gray-100 dark:border-zinc-800 last:border-b-0">
-                  <div class="w-20 sm:w-24 shrink-0 flex items-center justify-end pr-3 py-3 text-xs font-semibold text-gray-400 dark:text-zinc-500 border-r border-gray-100 dark:border-zinc-800">
+                <div class="flex items-stretch border-b border-gray-100 last:border-b-0">
+                  <div class="w-20 sm:w-24 shrink-0 flex items-center justify-end pr-3 py-3 text-xs font-semibold text-gray-400 border-r border-gray-100">
                     {{ slot.label }}
                   </div>
-                  <div class="flex-1 px-3 py-2.5 bg-orange-50 dark:bg-orange-950/40 flex items-center gap-2">
+                  <div class="flex-1 px-3 py-2.5 bg-orange-50 flex items-center gap-2">
                     <div class="flex-1 min-w-0">
-                      <p class="text-xs font-bold text-orange-700 dark:text-orange-300 truncate">🔧 {{ mb.reason || 'Under Maintenance' }}</p>
-                      <p class="text-[10px] text-orange-500 dark:text-orange-400">{{ mb.startTime }} – {{ mb.endTime }} · Not Available</p>
+                      <p class="text-xs font-bold text-orange-700 truncate">🔧 {{ mb.reason || 'Under Maintenance' }}</p>
+                      <p class="text-[10px] text-orange-500">{{ mb.startTime }} – {{ mb.endTime }} · Not Available</p>
                     </div>
                     <ui-icon name="construction" class="text-sm shrink-0 text-orange-400" />
                   </div>
                 </div>
               } @else if (getSlotEvent(slot.value); as ev) {
                 <!-- Booked slot -->
-                <div class="flex items-stretch border-b border-gray-100 dark:border-zinc-800 last:border-b-0">
-                  <div class="w-20 sm:w-24 shrink-0 flex items-center justify-end pr-3 py-3 text-xs font-semibold text-gray-400 dark:text-zinc-500 border-r border-gray-100 dark:border-zinc-800">
+                <div class="flex items-stretch border-b border-gray-100 last:border-b-0">
+                  <div class="w-20 sm:w-24 shrink-0 flex items-center justify-end pr-3 py-3 text-xs font-semibold text-gray-400 border-r border-gray-100">
                     {{ slot.label }}
                   </div>
                   <div
                     class="flex-1 px-3 py-2.5 flex items-center gap-2"
                     [class.bg-sky-50]="ev.eventKind !== 'COORDINATION'"
-                    [class.dark:bg-sky-950/40]="ev.eventKind !== 'COORDINATION'"
                     [class.bg-amber-50]="ev.eventKind === 'COORDINATION'"
-                    [class.dark:bg-amber-950/40]="ev.eventKind === 'COORDINATION'"
                   >
                     <div class="flex-1 min-w-0">
                       <p
                         class="text-xs font-bold truncate"
                         [class.text-sky-700]="ev.eventKind !== 'COORDINATION'"
-                        [class.dark:text-sky-300]="ev.eventKind !== 'COORDINATION'"
                         [class.text-amber-700]="ev.eventKind === 'COORDINATION'"
-                        [class.dark:text-amber-300]="ev.eventKind === 'COORDINATION'"
                       >{{ ev.eventKind === 'COORDINATION' ? '📋 Coordination Meeting' : ev.department }}</p>
                       <p
                         class="text-[10px]"
                         [class.text-sky-500]="ev.eventKind !== 'COORDINATION'"
-                        [class.dark:text-sky-400]="ev.eventKind !== 'COORDINATION'"
                         [class.text-amber-500]="ev.eventKind === 'COORDINATION'"
-                        [class.dark:text-amber-400]="ev.eventKind === 'COORDINATION'"
                       >{{ ev.startTime }} – {{ ev.endTime }} · {{ ev.eventKind === 'COORDINATION' ? 'Blocked' : 'Reserved' }}</p>
                     </div>
                     <ui-icon
@@ -311,8 +349,8 @@ interface CalendarCell {
                 </div>
               } @else if (isSlotInBasket(slot.value)) {
                 <!-- Already in basket -->
-                <div class="flex items-stretch border-b border-gray-100 dark:border-zinc-800 last:border-b-0">
-                  <div class="w-20 sm:w-24 shrink-0 flex items-center justify-end pr-3 py-3 text-xs font-semibold text-gray-400 dark:text-zinc-500 border-r border-gray-100 dark:border-zinc-800">
+                <div class="flex items-stretch border-b border-gray-100 last:border-b-0">
+                  <div class="w-20 sm:w-24 shrink-0 flex items-center justify-end pr-3 py-3 text-xs font-semibold text-gray-400 border-r border-gray-100">
                     {{ slot.label }}
                   </div>
                   <div class="flex-1 px-3 py-2.5 bg-primary/5 flex items-center gap-2">
@@ -323,21 +361,21 @@ interface CalendarCell {
               } @else {
                 <!-- Available slot -->
                 <div
-                  class="flex items-stretch border-b border-gray-100 dark:border-zinc-800 last:border-b-0 cursor-pointer group"
+                  class="flex items-stretch border-b border-gray-100 last:border-b-0 cursor-pointer group"
                   [class.ring-2]="isSlotSelected(slot.value)"
                   [class.ring-primary]="isSlotSelected(slot.value)"
                   [class.bg-primary/5]="isSlotSelected(slot.value)"
                   (click)="toggleTimeSlot(slot.value)"
                 >
-                  <div class="w-20 sm:w-24 shrink-0 flex items-center justify-end pr-3 py-3 text-xs font-semibold text-gray-400 dark:text-zinc-500 border-r border-gray-100 dark:border-zinc-800">
+                  <div class="w-20 sm:w-24 shrink-0 flex items-center justify-end pr-3 py-3 text-xs font-semibold text-gray-400 border-r border-gray-100">
                     {{ slot.label }}
                   </div>
-                  <div class="flex-1 px-3 py-2.5 flex items-center gap-2 group-hover:bg-emerald-50 dark:group-hover:bg-emerald-950/20 transition-colors">
+                  <div class="flex-1 px-3 py-2.5 flex items-center gap-2 group-hover:bg-emerald-50 transition-colors">
                     @if (isSlotSelected(slot.value)) {
                       <ui-icon name="check" class="text-primary text-base shrink-0" />
                       <span class="text-xs font-semibold text-primary">Selected</span>
                     } @else {
-                      <span class="text-xs text-gray-400 dark:text-zinc-500 group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors">Available — click to select</span>
+                      <span class="text-xs text-gray-400 group-hover:text-emerald-600 transition-colors">Available — click to select</span>
                     }
                   </div>
                 </div>
@@ -353,12 +391,18 @@ interface CalendarCell {
             </p>
           }
 
+          <div
+            class="shrink-0 flex flex-col gap-3"
+            [class.border-t]="adminMode()"
+            [class.border-gray-200]="adminMode()"
+            [class.pt-3]="adminMode()"
+          >
           <!-- Add Date button -->
-          <div class="flex gap-3 mt-2">
+          <div class="flex gap-3" [class.mt-2]="!adminMode()">
             <button
               type="button"
               (click)="view.set('calendar')"
-              class="flex-1 flex items-center justify-center gap-2 rounded-xl border border-gray-300 dark:border-zinc-600 px-4 py-3 text-sm font-semibold text-gray-700 dark:text-zinc-300 hover:bg-gray-50 dark:hover:bg-zinc-800 transition-colors cursor-pointer"
+              class="flex-1 flex items-center justify-center gap-2 rounded-xl border border-gray-300 px-4 py-3 text-sm font-semibold text-gray-700 hover:bg-gray-50 transition-colors cursor-pointer"
             >
               <ui-icon name="arrow_back" class="text-base" />
               Back to Calendar
@@ -376,7 +420,7 @@ interface CalendarCell {
 
           @if (basket().length > 0) {
             <div class="mt-1">
-              <p class="text-xs font-semibold text-gray-500 dark:text-zinc-400 mb-2">Selected dates:</p>
+              <p class="text-xs font-semibold text-gray-500 mb-2">Selected dates:</p>
               <div class="flex flex-wrap gap-2 mb-3">
                 @for (s of basket(); track s.date) {
                   <div class="flex items-center gap-1.5 rounded-lg bg-primary/10 border border-primary/20 px-3 py-1.5 text-xs font-semibold text-primary">
@@ -397,27 +441,50 @@ interface CalendarCell {
               </button>
             </div>
           }
+          </div>
         </div>
       </div>
     }
 
     <!-- ─── VIEW 3: Stepper Form ─── -->
     @if (view() === 'form') {
-      <div class="flex flex-col min-h-screen md:h-screen md:min-h-0">
+      <div
+        class="flex flex-col"
+        [class.min-h-screen]="!adminMode()"
+        [class.md:h-screen]="!adminMode()"
+        [class.md:min-h-0]="!adminMode()"
+        [class.h-full]="adminMode()"
+        [class.min-h-0]="adminMode()"
+      >
         <!-- Thin maroon top bar -->
         <div class="bg-primary bg-[linear-gradient(135deg,#7a2342,#5f1830_55%,#8d2546)] text-white shrink-0 px-4 sm:px-6 py-3 flex items-center gap-4 shadow">
-          <img src="/logo.svg" alt="LPU Logo" class="w-8 h-8 object-contain drop-shadow" />
+          @if (!adminMode()) {
+            <img src="/logo.svg" alt="LPU Logo" class="w-8 h-8 object-contain drop-shadow" />
+          }
           <span class="font-bold text-sm tracking-wide">FLT Theater — Reservation Form</span>
-          <button
-            type="button"
-            (click)="view.set('calendar')"
-            class="ml-auto flex items-center gap-1.5 text-white/70 hover:text-white text-xs transition-colors cursor-pointer"
-          >
-            <ui-icon name="calendar_month" class="text-base" />
-            Change Dates
-          </button>
+          <div class="ml-auto flex items-center gap-3">
+            @if (!adminMode()) {
+              <button
+                type="button"
+                (click)="view.set('calendar')"
+                class="flex items-center gap-1.5 text-white/70 hover:text-white text-xs transition-colors cursor-pointer"
+              >
+                <ui-icon name="calendar_month" class="text-base" />
+                Change Dates
+              </button>
+            }
+            @if (adminMode()) {
+              <a [routerLink]="returnPath()" class="flex items-center gap-1.5 text-white/70 hover:text-white text-xs transition-colors cursor-pointer">
+                <ui-icon name="arrow_back" class="text-base" />
+                Back to list
+              </a>
+            }
+          </div>
         </div>
-        <div class="flex-1 min-h-0 overflow-auto">
+        <div
+          class="flex flex-1 min-h-0 flex-col overflow-y-auto"
+          [style.scrollbar-width]="adminMode() ? 'thin' : null"
+        >
           @if (equipmentLoading()) {
             <div class="flex flex-1 items-center justify-center gap-3 text-gray-400 py-20">
               <ui-icon name="autorenew" class="text-3xl animate-spin" />
@@ -427,6 +494,8 @@ interface CalendarCell {
               [selectedDates]="basket()"
               [availableEquipment]="availableEquipment()"
               [equipmentLoading]="equipmentLoading()"
+              [returnPath]="returnPath()"
+              [returnLabel]="adminMode() ? 'Back to list' : 'Back to Home'"
               (addMoreDates)="view.set('calendar')"
             />
           }
@@ -438,6 +507,33 @@ interface CalendarCell {
 export class FltReservation implements OnInit {
   private readonly service = inject(FltReservationService);
   private readonly maintSvc = inject(MaintenanceService);
+
+  readonly adminMode = input(false);
+  readonly returnPath = input('/customer');
+
+  @HostBinding('class.min-h-screen') get fullHeight(): boolean {
+    return !this.adminMode();
+  }
+
+  @HostBinding('class.h-full') get adminEmbedHeight(): boolean {
+    return this.adminMode();
+  }
+
+  @HostBinding('class.min-h-0') get adminEmbedMinHeight(): boolean {
+    return this.adminMode();
+  }
+
+  @HostBinding('class.bg-gray-50') get lightBg(): boolean {
+    return true;
+  }
+
+  readonly advanceDays = computed(() =>
+    this.adminMode() ? 0 : RESERVATION_ADVANCE_DAYS.FLT,
+  );
+
+  readonly advanceNotice = computed(() =>
+    advanceNoticeText(this.advanceDays()),
+  );
 
   readonly view = signal<View>('calendar');
   readonly loadingEvents = signal(true);
@@ -470,11 +566,7 @@ export class FltReservation implements OnInit {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     const todayStr = this.formatDate(today);
-
-    // Earliest bookable date: today + 14 days
-    const minBookable = new Date(today);
-    minBookable.setDate(minBookable.getDate() + 14);
-    const minBookableStr = this.formatDate(minBookable);
+    const minBookableStr = getMinBookableDateStr(this.advanceDays(), today);
 
     const firstWeekday = new Date(year, month, 1).getDay();
     const daysInMonth = new Date(year, month + 1, 0).getDate();

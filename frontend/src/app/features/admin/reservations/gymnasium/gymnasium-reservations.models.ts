@@ -29,6 +29,8 @@ export interface GymReservationRecord {
   status: ReservationStatus;
   createdAt: string;
   satisfactionRating: number | null;
+  approvedAt: string | null;
+  approvedBy: string | null;
 }
 
 export interface SetCoordinationRequest {
@@ -52,4 +54,5 @@ export interface GymAdminActionResponse {
   message: string;
   blockedReason?: string;
   conflictedIds?: number[];
+  revertedIds?: number[];
 }

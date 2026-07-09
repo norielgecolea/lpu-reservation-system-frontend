@@ -6,7 +6,7 @@ import { BrnLabel } from '@spartan-ng/brain/label';
   selector: 'label[uiLabel]',
   hostDirectives: [{ directive: BrnLabel, inputs: ['for', 'id'] }],
   host: {
-    class: 'select-none text-sm text-gray-500 dark:text-zinc-400',
+    class: 'select-none text-sm text-gray-500',
   },
 })
 export class UiLabel {}

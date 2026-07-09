@@ -41,7 +41,7 @@ type PickerView = 'calendar' | 'timeslots';
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <!-- Full-screen overlay -->
-    <div class="fixed inset-0 z-50 flex flex-col bg-gray-50 dark:bg-zinc-900">
+    <div class="fixed inset-0 z-50 flex flex-col bg-gray-50">
 
       <!-- Header -->
       <div class="bg-amber-600 bg-[linear-gradient(135deg,#b45309,#92400e_55%,#d97706)] text-white shadow-lg shrink-0">
@@ -83,7 +83,7 @@ type PickerView = 'calendar' | 'timeslots';
       <!-- ── Calendar view ── -->
       @if (pickerView() === 'calendar') {
         <div class="flex-1 flex flex-col max-w-screen-2xl w-full mx-auto px-4 sm:px-6 py-4 gap-3 overflow-auto">
-          <div class="flex-1 flex flex-col overflow-hidden rounded-xl ring-1 ring-black/5 dark:ring-white/10 shadow-sm bg-white dark:bg-zinc-900">
+          <div class="flex-1 flex flex-col overflow-hidden rounded-xl ring-1 ring-black/5 shadow-sm bg-white">
             <div class="grid grid-cols-7 bg-amber-600 text-center text-sm font-bold text-white shrink-0">
               @for (wd of weekdays; track wd) {
                 <div class="border-r border-white/30 px-1 py-2.5 last:border-r-0 text-xs sm:text-sm">{{ wd }}</div>
@@ -92,15 +92,12 @@ type PickerView = 'calendar' | 'timeslots';
             <div class="flex-1 grid grid-cols-7 overflow-auto" [style.grid-template-rows]="calendarRows()">
               @for (cell of calendarCells(); track $index) {
                 <div
-                  class="flex flex-col border-r border-b border-gray-100 dark:border-zinc-800 p-1 sm:p-2 min-h-16 sm:min-h-20 transition-colors"
+                  class="flex flex-col border-r border-b border-gray-100 bg-white p-1 sm:p-2 min-h-16 sm:min-h-20 transition-colors"
                   [class.bg-gray-50]="cell.day !== null && !cell.isToday"
-                  [class.dark:bg-zinc-900]="cell.day !== null && !cell.isToday"
                   [class.bg-gray-100]="cell.day === null"
-                  [class.dark:bg-zinc-800/40]="cell.day === null"
                   [class.bg-amber-50]="cell.isToday"
                   [class.cursor-pointer]="cell.day !== null && !cell.isPast"
                   [class.hover:bg-amber-50]="cell.day !== null && !cell.isPast && !cell.isToday"
-                  [class.dark:hover:bg-zinc-800]="cell.day !== null && !cell.isPast && !cell.isToday"
                   [class.ring-2]="cell.dateStr === selectedSlot()?.date"
                   [class.ring-amber-500]="cell.dateStr === selectedSlot()?.date"
                   [class.opacity-40]="cell.isPast"
@@ -112,7 +109,6 @@ type PickerView = 'calendar' | 'timeslots';
                       [class.bg-amber-500]="cell.isToday"
                       [class.text-white]="cell.isToday"
                       [class.text-gray-700]="!cell.isToday"
-                      [class.dark:text-zinc-300]="!cell.isToday"
                     >{{ cell.day }}</span>
                     @if (cell.events.length > 0) {
                       <ul class="flex flex-col gap-0.5 overflow-hidden">
@@ -121,24 +117,18 @@ type PickerView = 'calendar' | 'timeslots';
                             class="min-w-0 rounded border-l-2 px-1 py-0.5 text-[10px] leading-tight"
                             [class.border-sky-500]="ev.eventKind !== 'COORDINATION'"
                             [class.bg-sky-50]="ev.eventKind !== 'COORDINATION'"
-                            [class.dark:bg-sky-950/50]="ev.eventKind !== 'COORDINATION'"
                             [class.border-amber-500]="ev.eventKind === 'COORDINATION'"
                             [class.bg-amber-50]="ev.eventKind === 'COORDINATION'"
-                            [class.dark:bg-amber-950/50]="ev.eventKind === 'COORDINATION'"
                           >
                             <span
                               class="block truncate font-bold"
                               [class.text-sky-700]="ev.eventKind !== 'COORDINATION'"
-                              [class.dark:text-sky-300]="ev.eventKind !== 'COORDINATION'"
                               [class.text-amber-700]="ev.eventKind === 'COORDINATION'"
-                              [class.dark:text-amber-300]="ev.eventKind === 'COORDINATION'"
                             >{{ ev.startTime }}–{{ ev.endTime }}</span>
                             <span
                               class="block truncate"
                               [class.text-sky-900]="ev.eventKind !== 'COORDINATION'"
-                              [class.dark:text-sky-200]="ev.eventKind !== 'COORDINATION'"
                               [class.text-amber-900]="ev.eventKind === 'COORDINATION'"
-                              [class.dark:text-amber-200]="ev.eventKind === 'COORDINATION'"
                             >{{ ev.eventKind === 'COORDINATION' ? '📋 Coordination' : ev.department }}</span>
                           </li>
                         }
@@ -154,7 +144,7 @@ type PickerView = 'calendar' | 'timeslots';
           </div>
 
           <!-- Legend -->
-          <div class="flex flex-wrap items-center gap-4 shrink-0 text-xs text-gray-500 dark:text-zinc-400">
+          <div class="flex flex-wrap items-center gap-4 shrink-0 text-xs text-gray-500">
             <span class="flex items-center gap-1.5">
               <span class="inline-block w-3 h-3 rounded border-l-2 border-sky-500 bg-sky-50"></span>
               Approved Reservation
@@ -168,15 +158,15 @@ type PickerView = 'calendar' | 'timeslots';
 
           <!-- Bottom bar: selected slot preview + save -->
           @if (selectedSlot()) {
-            <div class="shrink-0 border-t border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 shadow-lg px-4 sm:px-6 py-3">
+            <div class="shrink-0 border-t border-gray-200 bg-white shadow-lg px-4 sm:px-6 py-3">
               <div class="max-w-screen-2xl mx-auto flex flex-col sm:flex-row sm:items-center gap-3">
-                <div class="flex items-center gap-2 text-sm font-semibold text-amber-700 dark:text-amber-400">
+                <div class="flex items-center gap-2 text-sm font-semibold text-amber-700">
                   <ui-icon name="handshake" class="text-base text-amber-500" />
                   {{ formatDateShort(selectedSlot()!.date) }} · {{ selectedSlot()!.startTime }}–{{ selectedSlot()!.endTime }}
                 </div>
                 <div class="flex gap-2 sm:ml-auto">
                   <button type="button" (click)="selectedSlot.set(null)"
-                    class="rounded-lg border border-gray-200 dark:border-zinc-700 px-4 py-2 text-sm font-semibold text-gray-600 dark:text-zinc-300 hover:bg-gray-50 dark:hover:bg-zinc-800 cursor-pointer transition-colors">
+                    class="rounded-lg border border-gray-200 px-4 py-2 text-sm font-semibold text-gray-600 hover:bg-gray-50 cursor-pointer transition-colors">
                     Clear
                   </button>
                   <button type="button" (click)="save()"
@@ -198,39 +188,33 @@ type PickerView = 'calendar' | 'timeslots';
         <div class="flex-1 min-h-0 overflow-auto max-w-screen-md mx-auto w-full px-4 sm:px-6 py-6 flex flex-col gap-4">
           <div class="flex items-center gap-2 shrink-0">
             <ui-icon name="calendar_today" class="text-amber-600 text-base" />
-            <span class="text-sm font-bold text-gray-800 dark:text-zinc-100">{{ formatDateLong(selectedDay()) }}</span>
+            <span class="text-sm font-bold text-gray-800">{{ formatDateLong(selectedDay()) }}</span>
             <span class="ml-auto text-xs text-gray-400 italic">Select start then end hour</span>
           </div>
 
-          <div class="rounded-xl overflow-hidden ring-1 ring-black/5 dark:ring-white/10 shadow-sm bg-white dark:bg-zinc-900">
+          <div class="rounded-xl overflow-hidden ring-1 ring-black/5 shadow-sm bg-white">
             @for (slot of timeSlots; track slot.value) {
               @if (getSlotEvent(slot.value); as ev) {
                 <!-- Booked slot -->
-                <div class="flex items-stretch border-b border-gray-100 dark:border-zinc-800 last:border-b-0">
-                  <div class="w-20 sm:w-24 shrink-0 flex items-center justify-end pr-3 py-3 text-xs font-semibold text-gray-400 dark:text-zinc-500 border-r border-gray-100 dark:border-zinc-800">
+                <div class="flex items-stretch border-b border-gray-100 last:border-b-0">
+                  <div class="w-20 sm:w-24 shrink-0 flex items-center justify-end pr-3 py-3 text-xs font-semibold text-gray-400 border-r border-gray-100">
                     {{ slot.label }}
                   </div>
                   <div
                     class="flex-1 px-3 py-2.5 flex items-center gap-2"
                     [class.bg-sky-50]="ev.eventKind !== 'COORDINATION'"
-                    [class.dark:bg-sky-950/40]="ev.eventKind !== 'COORDINATION'"
                     [class.bg-amber-50]="ev.eventKind === 'COORDINATION'"
-                    [class.dark:bg-amber-950/40]="ev.eventKind === 'COORDINATION'"
                   >
                     <div class="flex-1 min-w-0">
                       <p
                         class="text-xs font-bold truncate"
                         [class.text-sky-700]="ev.eventKind !== 'COORDINATION'"
-                        [class.dark:text-sky-300]="ev.eventKind !== 'COORDINATION'"
                         [class.text-amber-700]="ev.eventKind === 'COORDINATION'"
-                        [class.dark:text-amber-300]="ev.eventKind === 'COORDINATION'"
                       >{{ ev.eventKind === 'COORDINATION' ? '📋 Coordination Meeting' : ev.department }}</p>
                       <p
                         class="text-[10px]"
                         [class.text-sky-500]="ev.eventKind !== 'COORDINATION'"
-                        [class.dark:text-sky-400]="ev.eventKind !== 'COORDINATION'"
                         [class.text-amber-500]="ev.eventKind === 'COORDINATION'"
-                        [class.dark:text-amber-400]="ev.eventKind === 'COORDINATION'"
                       >{{ ev.startTime }} – {{ ev.endTime }} · {{ ev.eventKind === 'COORDINATION' ? 'Blocked' : 'Reserved' }}</p>
                     </div>
                     <ui-icon
@@ -244,22 +228,21 @@ type PickerView = 'calendar' | 'timeslots';
               } @else {
                 <!-- Available -->
                 <div
-                  class="flex items-stretch border-b border-gray-100 dark:border-zinc-800 last:border-b-0 cursor-pointer group"
+                  class="flex items-stretch border-b border-gray-100 last:border-b-0 cursor-pointer group"
                   [class.ring-2]="isHourInSelection(slot.value)"
                   [class.ring-amber-500]="isHourInSelection(slot.value)"
                   [class.bg-amber-50]="isHourInSelection(slot.value)"
-                  [class.dark:bg-amber-950/20]="isHourInSelection(slot.value)"
                   (click)="toggleHour(slot.value)"
                 >
-                  <div class="w-20 sm:w-24 shrink-0 flex items-center justify-end pr-3 py-3 text-xs font-semibold text-gray-400 dark:text-zinc-500 border-r border-gray-100 dark:border-zinc-800">
+                  <div class="w-20 sm:w-24 shrink-0 flex items-center justify-end pr-3 py-3 text-xs font-semibold text-gray-400 border-r border-gray-100">
                     {{ slot.label }}
                   </div>
-                  <div class="flex-1 px-3 py-2.5 flex items-center gap-2 group-hover:bg-amber-50 dark:group-hover:bg-amber-950/20 transition-colors">
+                  <div class="flex-1 px-3 py-2.5 flex items-center gap-2 group-hover:bg-amber-50 transition-colors">
                     @if (isHourInSelection(slot.value)) {
                       <ui-icon name="check" class="text-amber-600 text-base shrink-0" />
-                      <span class="text-xs font-semibold text-amber-700 dark:text-amber-400">Selected</span>
+                      <span class="text-xs font-semibold text-amber-700">Selected</span>
                     } @else {
-                      <span class="text-xs text-gray-400 dark:text-zinc-500 group-hover:text-amber-600 dark:group-hover:text-amber-400 transition-colors">Available — click to select</span>
+                      <span class="text-xs text-gray-400 group-hover:text-amber-600 transition-colors">Available — click to select</span>
                     }
                   </div>
                 </div>
@@ -275,7 +258,7 @@ type PickerView = 'calendar' | 'timeslots';
 
           <div class="flex gap-3 mt-2">
             <button type="button" (click)="pickerView.set('calendar')"
-              class="flex-1 flex items-center justify-center gap-2 rounded-xl border border-gray-300 dark:border-zinc-600 px-4 py-3 text-sm font-semibold text-gray-700 dark:text-zinc-300 hover:bg-gray-50 dark:hover:bg-zinc-800 transition-colors cursor-pointer">
+              class="flex-1 flex items-center justify-center gap-2 rounded-xl border border-gray-300 px-4 py-3 text-sm font-semibold text-gray-700 hover:bg-gray-50 transition-colors cursor-pointer">
               <ui-icon name="arrow_back" class="text-base" /> Back
             </button>
             <button type="button" (click)="confirmTimeSlot()"

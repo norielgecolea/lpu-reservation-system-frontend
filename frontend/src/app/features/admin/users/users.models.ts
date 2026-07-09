@@ -36,3 +36,8 @@ export interface AccountStatementResponse {
   success: boolean;
   message: string;
 }
+
+export interface ResetPasswordRequest {
+  employeeId: string;
+  newPassword: string;
+}

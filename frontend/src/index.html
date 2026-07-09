@@ -14,16 +14,11 @@
     href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200"
     rel="stylesheet" />
   <script>
-    // Apply saved/system theme before first paint to avoid a flash.
-    (function () {
-      try {
-        var t = localStorage.getItem('lpu-theme');
-        if (t !== 'light' && t !== 'dark') {
-          t = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
-        }
-        if (t === 'dark') document.documentElement.classList.add('dark');
-      } catch (e) {}
-    })();
+    try {
+      document.documentElement.classList.remove('dark');
+      document.documentElement.style.colorScheme = 'light';
+      localStorage.removeItem('lpu-theme');
+    } catch (e) {}
   </script>
 </head>
 
